@@ -60,6 +60,21 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
+## Supabase (liens publics + acceptation)
+
+Ce projet sauvegarde automatiquement les propositions dans Supabase pour que le lien `/p/:token` fonctionne sur n'importe quel appareil.
+
+1) Crée un projet Supabase
+2) Dans **SQL Editor**, exécute `supabase/schema.sql`
+3) Crée un fichier `.env.local` (à partir de `.env.example`) :
+
+```bash
+VITE_SUPABASE_URL="https://...supabase.co"
+VITE_SUPABASE_ANON_KEY="..."
+```
+
+4) `npm i` puis `npm run dev`
+
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
@@ -73,6 +88,8 @@ To connect a domain, navigate to Project > Settings > Domains and click Connect 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
 
 ## D) Schéma DB + Sécurité
+
+> Note : la référence à jour est `supabase/schema.sql` (RPC + tokens). La section ci-dessous vient d'une première version.
 
 ### Tables
 

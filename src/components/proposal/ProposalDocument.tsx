@@ -1,5 +1,5 @@
 import { Check, Phone, Mail, Globe, Shield } from "lucide-react";
-import { ProposalData } from "@/types/proposal";
+import { ProposalData, ProposalRecord } from "@/types/proposal";
 import { getPackById } from "@/data/packs";
 import { getOptionById } from "@/data/options";
 import { getProblemById, getGoalById } from "@/data/problems";
@@ -9,9 +9,10 @@ import { Timeline } from "./Timeline";
 interface ProposalDocumentProps {
   data: ProposalData;
   token?: string;
+  meta?: Pick<ProposalRecord, "status" | "version" | "validUntil" | "acceptedAt">;
 }
 
-export const ProposalDocument = ({ data, token }: ProposalDocumentProps) => {
+export const ProposalDocument = ({ data, token, meta }: ProposalDocumentProps) => {
   const pack = getPackById(data.packId);
   const problem = getProblemById(data.prospectProblem);
   const goal = getGoalById(data.prospectGoal);
@@ -48,7 +49,16 @@ export const ProposalDocument = ({ data, token }: ProposalDocumentProps) => {
           <p className="mt-1 text-muted-foreground">
             {formatDate(new Date())}
             {token && <span className="ml-2">• Réf: {token.toUpperCase()}</span>}
+            {meta?.version ? <span className="ml-2">• Version {meta.version}</span> : null}
           </p>
+          {meta?.validUntil ? (
+            <p className="mt-1 text-sm text-muted-foreground">
+              Valable jusqu'au <strong>{meta.validUntil.split("-").reverse().join("/")}</strong>
+              {meta.status === "accepted" && meta.acceptedAt ? (
+                <span className="ml-2">• ✅ Acceptée</span>
+              ) : null}
+            </p>
+          ) : null}
         </div>
         {data.ownerName && (
           <div className="text-right text-sm">
@@ -249,7 +259,7 @@ export const ProposalDocument = ({ data, token }: ProposalDocumentProps) => {
         </p>
         {data.ownerSiret && <p className="mt-1">SIRET: {data.ownerSiret}</p>}
         <p className="mt-3 text-xs">
-          Ce document est une proposition commerciale simplifiée, non contractuelle.
+          Ce document est une proposition commerciale simplifiée (non contractuelle). Un devis/facture final(e) sera fourni(e) avant démarrage.
         </p>
       </footer>
     </div>

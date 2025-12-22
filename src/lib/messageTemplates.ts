@@ -10,6 +10,9 @@ export interface MessageContext {
   ownerName: string;
   ownerPhone: string;
   ownerEmail: string;
+  depositPercent?: number;
+  depositAmount?: number;
+  validUntil?: string;
 }
 
 export interface MessageTemplate {
@@ -21,10 +24,15 @@ export interface MessageTemplate {
 }
 
 export const generateMessages = (context: MessageContext): MessageTemplate[] => {
-  const { prospectName, prospectCompany, packName, totalPrice, deliveryDate, proposalUrl, ownerName, ownerPhone, ownerEmail } = context;
+  const { prospectName, prospectCompany, packName, totalPrice, deliveryDate, proposalUrl, ownerName, ownerPhone, ownerEmail, depositPercent, depositAmount, validUntil } = context;
   const firstName = prospectName.split(" ")[0];
   const priceFormatted = formatPrice(totalPrice);
   const dateFormatted = formatDate(deliveryDate);
+  const depositText =
+    depositPercent != null && depositAmount != null
+      ? `Acompte (${depositPercent}%) : ${formatPrice(depositAmount)}.`
+      : "";
+  const validText = validUntil ? `Valable jusqu'au ${validUntil.split("-").reverse().join("/")}.` : "";
 
   return [
     {
@@ -38,6 +46,8 @@ Suite à notre échange, voici votre proposition pour ${prospectCompany} :
 
 Pack ${packName} à ${priceFormatted} — livraison estimée le ${dateFormatted}.
 
+${depositText} ${validText}
+
 Dites-moi si vous avez des questions !
 ${ownerName}`,
     },
@@ -45,7 +55,7 @@ ${ownerName}`,
       id: "sms-short",
       name: "SMS — Court",
       type: "sms",
-      content: `${firstName}, votre proposition est prête : ${proposalUrl} — ${priceFormatted}, livraison ${dateFormatted}. Des questions ? Appelez-moi au ${ownerPhone}`,
+      content: `${firstName}, votre proposition est prête : ${proposalUrl} — ${priceFormatted}, livraison ${dateFormatted}. ${validText} Des questions ?${ownerPhone ? ` Appelez-moi au ${ownerPhone}` : ""}`,
     },
     {
       id: "email-formal",
@@ -62,12 +72,13 @@ ${proposalUrl}
 Résumé :
 • Pack ${packName} — ${priceFormatted} HT
 • Livraison estimée : ${dateFormatted}
+${depositText ? `• ${depositText}\n` : ""}${validText ? `• ${validText}\n` : ""}
 
 N'hésitez pas à me contacter pour toute question.
 
 Cordialement,
 ${ownerName}
-${ownerPhone} | ${ownerEmail}`,
+${ownerPhone ? `${ownerPhone} | ` : ""}${ownerEmail}`,
     },
     {
       id: "whatsapp-followup",
@@ -81,7 +92,7 @@ Je reste dispo si vous souhaitez en discuter. Bonne journée !`,
       id: "sms-urgent",
       name: "SMS — Offre limitée",
       type: "sms",
-      content: `${firstName}, offre valable 7 jours. Votre site pro à ${priceFormatted} : ${proposalUrl}. On démarre ?`,
+      content: `${firstName}, ${validText || "proposition valable 14 jours."} Votre site pro à ${priceFormatted} : ${proposalUrl}. On démarre ?`,
     },
   ];
 };

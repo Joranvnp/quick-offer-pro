@@ -25,13 +25,20 @@ export interface ProposalData {
   tone: "neutral" | "confident" | "simple";
 }
 
-export interface Proposal extends ProposalData {
+export type ProposalStatus = "draft" | "sent" | "accepted";
+
+export interface ProposalRecord {
   id: string;
   token: string;
-  createdAt: Date;
-  updatedAt: Date;
-  status: "draft" | "sent" | "viewed" | "accepted";
-  pdfUrl?: string;
+  status: ProposalStatus;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+  validUntil: string; // YYYY-MM-DD
+  sentAt?: string | null;
+  acceptedAt?: string | null;
+  acceptedMeta?: Record<string, unknown> | null;
+  data: ProposalData;
 }
 
 export const defaultProposalData: ProposalData = {
@@ -50,8 +57,4 @@ export const defaultProposalData: ProposalData = {
   ownerWebsite: "",
   ownerSiret: "",
   tone: "neutral",
-};
-
-export const generateToken = (): string => {
-  return Math.random().toString(36).substring(2, 8);
 };

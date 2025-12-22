@@ -9,19 +9,22 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ProposalData } from "@/types/proposal";
+import { ProposalData, ProposalRecord } from "@/types/proposal";
 import { getPackById } from "@/data/packs";
 import { calculatePricing, calculateDeliveryDate } from "@/lib/pricing";
 import { generateMessages, MessageTemplate } from "@/lib/messageTemplates";
 import { useToast } from "@/hooks/use-toast";
+import { markProposalSent } from "@/lib/proposalService";
 
 interface ShareActionsProps {
   data: ProposalData;
   token: string;
+  record?: ProposalRecord | null;
+  saving?: boolean;
   onDownloadPDF: () => void;
 }
 
-export const ShareActions = ({ data, token, onDownloadPDF }: ShareActionsProps) => {
+export const ShareActions = ({ data, token, record, saving, onDownloadPDF }: ShareActionsProps) => {
   const { toast } = useToast();
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -30,6 +33,8 @@ export const ShareActions = ({ data, token, onDownloadPDF }: ShareActionsProps) 
   const deliveryDate = calculateDeliveryDate(data.packId);
 
   const proposalUrl = `${window.location.origin}/p/${token}`;
+
+  const canShare = !!record && !saving;
 
   const messages = generateMessages({
     prospectName: data.prospectName || "Client",
@@ -41,10 +46,20 @@ export const ShareActions = ({ data, token, onDownloadPDF }: ShareActionsProps) 
     ownerName: data.ownerName || "Votre conseiller",
     ownerPhone: data.ownerPhone || "",
     ownerEmail: data.ownerEmail || "",
+    depositPercent: data.depositPercent,
+    depositAmount: pricing.depositAmount,
+    validUntil: record?.validUntil,
   });
 
   const copyToClipboard = async (text: string, id: string) => {
     await navigator.clipboard.writeText(text);
+    // Consider the proposal "sent" once we copy a message.
+    try {
+      await markProposalSent(token);
+    } catch (e) {
+      // non-blocking
+      console.warn(e);
+    }
     setCopiedId(id);
     toast({
       title: "Copié !",
@@ -55,6 +70,11 @@ export const ShareActions = ({ data, token, onDownloadPDF }: ShareActionsProps) 
 
   const copyLink = async () => {
     await navigator.clipboard.writeText(proposalUrl);
+    try {
+      await markProposalSent(token);
+    } catch (e) {
+      console.warn(e);
+    }
     toast({
       title: "Lien copié !",
       description: "Le lien de la proposition a été copié.",
@@ -62,20 +82,21 @@ export const ShareActions = ({ data, token, onDownloadPDF }: ShareActionsProps) 
   };
 
   return (
-    <div className="flex flex-wrap gap-3">
-      <Button onClick={copyLink} variant="outline" className="gap-2">
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap gap-3">
+      <Button onClick={copyLink} variant="outline" className="gap-2" disabled={!canShare}>
         <Copy className="h-4 w-4" />
         Copier le lien
       </Button>
 
-      <Button onClick={onDownloadPDF} variant="outline" className="gap-2">
+      <Button onClick={onDownloadPDF} variant="outline" className="gap-2" disabled={!canShare}>
         <Download className="h-4 w-4" />
         Télécharger PDF
       </Button>
 
       <Dialog>
         <DialogTrigger asChild>
-          <Button className="gap-2">
+          <Button className="gap-2" disabled={!canShare}>
             <MessageCircle className="h-4 w-4" />
             Messages prêts
           </Button>
@@ -117,6 +138,12 @@ export const ShareActions = ({ data, token, onDownloadPDF }: ShareActionsProps) 
           </Tabs>
         </DialogContent>
       </Dialog>
+      </div>
+
+      <div className="text-xs text-muted-foreground">
+        {saving ? "Sauvegarde en cours…" : record ? "Sauvegardé" : "Sauvegarde automatique dès que les champs obligatoires sont remplis."}
+        {record?.status === "accepted" ? " • ✅ Acceptée" : record?.status === "sent" ? " • Envoyée" : ""}
+      </div>
     </div>
   );
 };

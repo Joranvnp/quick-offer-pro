@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,28 +6,42 @@ import { ProposalForm } from "@/components/proposal/ProposalForm";
 import { ProposalDocument } from "@/components/proposal/ProposalDocument";
 import { PricingSummary } from "@/components/proposal/PricingSummary";
 import { ShareActions } from "@/components/proposal/ShareActions";
-import { ProposalData, defaultProposalData, generateToken } from "@/types/proposal";
+import { ProposalData, ProposalRecord, defaultProposalData } from "@/types/proposal";
 import { useToast } from "@/hooks/use-toast";
+import { generateToken } from "@/lib/tokens";
+import { computeValidUntil, upsertProposal } from "@/lib/proposalService";
+import { downloadProposalPdf } from "@/lib/pdf";
 
 const NewProposal = () => {
   const { toast } = useToast();
   const [data, setData] = useState<ProposalData>(defaultProposalData);
   const [showPreview, setShowPreview] = useState(false);
-  const [token] = useState(generateToken);
+  const [{ token, editToken }] = useState(() => {
+    const token = generateToken(12);
+    const storageKey = `qop_edit_token_${token}`;
+    const existing = localStorage.getItem(storageKey);
+    const editToken = existing ?? generateToken(24);
+    if (!existing) localStorage.setItem(storageKey, editToken);
+    return { token, editToken };
+  });
+  const [validUntil] = useState(() => computeValidUntil(14));
+  const [record, setRecord] = useState<ProposalRecord | null>(null);
+  const [saving, setSaving] = useState(false);
   const documentRef = useRef<HTMLDivElement>(null);
 
   const handleChange = (updates: Partial<ProposalData>) => {
     setData((prev) => ({ ...prev, ...updates }));
   };
 
-  const handleDownloadPDF = () => {
-    if (documentRef.current) {
-      window.print();
+  const handleDownloadPDF = async () => {
+    if (!record) {
+      toast({
+        title: "Sauvegarde en cours",
+        description: "Attendez une seconde que la proposition soit enregistrée.",
+      });
+      return;
     }
-    toast({
-      title: "Impression lancée",
-      description: "Sélectionnez 'Enregistrer en PDF' dans les options d'impression.",
-    });
+    await downloadProposalPdf(record);
   };
 
   const isValid =
@@ -36,6 +50,37 @@ const NewProposal = () => {
     data.packId &&
     data.ownerName &&
     data.ownerEmail;
+
+  // Auto-save (debounced) to Supabase so the public link works everywhere.
+  useEffect(() => {
+    if (!isValid) return;
+
+    const timeout = window.setTimeout(async () => {
+      try {
+        setSaving(true);
+        const saved = await upsertProposal({
+          token,
+          editToken,
+          data,
+          validUntil,
+        });
+        setRecord(saved);
+        // local fallback + quick re-open
+        localStorage.setItem(`proposal_${token}`, JSON.stringify(data));
+      } catch (e: any) {
+        console.error(e);
+        toast({
+          title: "Erreur de sauvegarde",
+          description: e?.message ?? "Impossible d'enregistrer la proposition.",
+          variant: "destructive",
+        });
+      } finally {
+        setSaving(false);
+      }
+    }, 700);
+
+    return () => window.clearTimeout(timeout);
+  }, [data, editToken, isValid, toast, token, validUntil]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -90,6 +135,8 @@ const NewProposal = () => {
                 <ShareActions
                   data={data}
                   token={token}
+                  record={record}
+                  saving={saving}
                   onDownloadPDF={handleDownloadPDF}
                 />
               </div>
@@ -132,7 +179,16 @@ const NewProposal = () => {
                 </Button>
               </div>
               <div ref={documentRef}>
-                <ProposalDocument data={data} token={token} />
+                <ProposalDocument
+                  data={data}
+                  token={token}
+                  meta={{
+                    status: record?.status ?? "draft",
+                    version: record?.version ?? 1,
+                    validUntil,
+                    acceptedAt: record?.acceptedAt ?? null,
+                  }}
+                />
               </div>
             </div>
           </div>
