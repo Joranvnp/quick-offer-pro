@@ -1,127 +1,471 @@
-import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Download, Mail, Phone } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  LayoutDashboard,
+  Pencil,
+  Download,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge, BadgeProps } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { ProposalDocument } from "@/components/proposal/ProposalDocument";
-import { ProposalData, defaultProposalData } from "@/types/proposal";
 import { useToast } from "@/hooks/use-toast";
+import { getStoredProposal, updateStoredProposal } from "@/lib/qopStorage";
+import {
+  isSupabaseConfigured,
+  remoteAccept,
+  remoteDecline,
+  remoteMarkViewed,
+  remotePublicGet,
+  QopPublicProposalRow,
+} from "@/lib/qopRemote";
+import { ProposalData } from "@/types/proposal";
 
-// For demo purposes, we'll use localStorage to store proposals
-// In production, this would come from Supabase
-const getProposalFromStorage = (token: string): ProposalData | null => {
-  try {
-    const stored = localStorage.getItem(`proposal_${token}`);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch (e) {
-    console.error("Error reading proposal:", e);
+const statusLabel = (s: string) => {
+  switch (s) {
+    case "draft":
+      return "Brouillon";
+    case "sent":
+      return "Envoyée";
+    case "viewed":
+      return "Vue";
+    case "accepted":
+      return "Acceptée";
+    case "declined":
+      return "Refusée";
+    default:
+      return s;
   }
-  return null;
+};
+
+const statusVariant = (s: string): BadgeProps["variant"] => {
+  switch (s) {
+    case "accepted":
+      return "default";
+    case "declined":
+      return "destructive";
+    case "viewed":
+      return "secondary";
+    case "sent":
+      return "outline";
+    default:
+      return "outline";
+  }
 };
 
 const ViewProposal = () => {
-  const { token } = useParams<{ token: string }>();
   const { toast } = useToast();
+  const { token = "" } = useParams<{ token: string }>();
+  const stored = token ? getStoredProposal(token) : null;
+  const documentRef = useRef<HTMLDivElement>(null);
 
-  // Try to get stored proposal, otherwise use demo data
-  const storedProposal = token ? getProposalFromStorage(token) : null;
+  const [acceptName, setAcceptName] = useState("");
+  const [acceptEmail, setAcceptEmail] = useState("");
+  const [declineReason, setDeclineReason] = useState("");
+  const [viewMarked, setViewMarked] = useState(false);
 
-  const demoData: ProposalData = storedProposal || {
-    ...defaultProposalData,
-    prospectName: "Jean Dupont",
-    prospectCompany: "Dupont Plomberie",
-    prospectSector: "Plomberie",
-    prospectCity: "Lyon",
-    prospectProblem: "no-site",
-    prospectGoal: "more-calls",
-    packId: "pro",
-    selectedOptions: ["logo", "copywriting"],
-    depositPercent: 30,
-    ownerName: "Marie Martin",
-    ownerPhone: "06 12 34 56 78",
-    ownerEmail: "marie@webdesign.fr",
-    ownerWebsite: "www.webdesign.fr",
-    ownerSiret: "123 456 789 00012",
-    tone: "neutral",
-  };
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: ["proposal", token],
+    enabled: Boolean(token),
+    queryFn: async () => {
+      if (isSupabaseConfigured()) {
+        return await remotePublicGet(token);
+      }
+      // Local fallback (owner-only)
+      if (stored) {
+        return {
+          token: stored.token,
+          proposal: stored.data,
+          pack_id: stored.data.packId,
+          selected_options: stored.data.selectedOptions,
+          total_price: 0,
+          deposit_percent: stored.data.depositPercent,
+          deposit_amount: 0,
+          status: stored.status,
+          version: 1,
+          valid_until: stored.validUntil,
+          sent_at: null,
+          accepted_at: null,
+          accepted_meta: null,
+          created_at: stored.createdAt,
+          updated_at: stored.updatedAt,
+        } as QopPublicProposalRow;
+      }
+      return null;
+    },
+  });
 
-  const handlePrint = () => {
-    window.print();
+  const proposalData = useMemo(() => {
+    return (
+      (data?.proposal as ProposalData | undefined) ?? stored?.data ?? undefined
+    );
+  }, [data, stored]);
+
+  const status =
+    (data?.status as string | undefined) ?? stored?.status ?? "draft";
+  const validUntil = data?.valid_until ?? stored?.validUntil;
+  const expired = validUntil
+    ? new Date(validUntil) < new Date(new Date().toDateString())
+    : false;
+
+  useEffect(() => {
+    if (!token || viewMarked) return;
+    if (!isSupabaseConfigured()) return;
+    if (!data) return;
+    if (data.status === "accepted" || data.status === "declined") return;
+
+    remoteMarkViewed(token)
+      .then(() => {
+        setViewMarked(true);
+        // Keep local badge updated on owner device
+        if (stored) updateStoredProposal(token, { status: "viewed" });
+      })
+      .catch(() => {});
+  }, [data, stored, token, viewMarked]);
+
+  const handleDownloadPDF = () => {
+    if (documentRef.current) {
+      window.print();
+    }
     toast({
       title: "Impression lancée",
-      description: "Sélectionnez 'Enregistrer en PDF' pour télécharger.",
+      description:
+        "Sélectionnez 'Enregistrer en PDF' dans les options d'impression.",
     });
   };
 
-  return (
-    <div className="min-h-screen bg-secondary/30">
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur no-print">
-        <div className="container flex h-16 items-center justify-between">
-          <Link
-            to="/"
-            className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Accueil
-          </Link>
-          <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={handlePrint} className="gap-2">
-              <Download className="h-4 w-4" />
-              Télécharger PDF
-            </Button>
-            <Button size="sm" asChild className="gap-2">
-              <a href={`mailto:${demoData.ownerEmail}`}>
-                <Mail className="h-4 w-4" />
-                Contacter
-              </a>
-            </Button>
+  const accept = async () => {
+    if (!isSupabaseConfigured()) {
+      toast({
+        title: "Supabase non configuré",
+        description: "Impossible d'enregistrer l'acceptation sans Supabase.",
+        variant: "destructive",
+      });
+      return;
+    }
+    await remoteAccept({
+      token,
+      name: acceptName || undefined,
+      email: acceptEmail || undefined,
+      clientDate: new Date().toISOString(),
+    });
+    toast({
+      title: "Merci !",
+      description: "Votre acceptation a été enregistrée.",
+    });
+    if (stored) updateStoredProposal(token, { status: "accepted" });
+    await refetch();
+  };
+
+  const decline = async () => {
+    if (!isSupabaseConfigured()) {
+      toast({
+        title: "Supabase non configuré",
+        description: "Impossible d'enregistrer le refus sans Supabase.",
+        variant: "destructive",
+      });
+      return;
+    }
+    await remoteDecline({ token, reason: declineReason || undefined });
+    toast({
+      title: "C'est noté",
+      description: "Votre réponse a été enregistrée.",
+    });
+    if (stored) updateStoredProposal(token, { status: "declined" });
+    await refetch();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="border-b border-border">
+          <div className="container flex h-16 items-center">
+            <Link
+              to="/"
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Retour
+            </Link>
           </div>
+        </header>
+        <main className="container py-10">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Chargement de la proposition...
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="border-b border-border">
+          <div className="container flex h-16 items-center">
+            <Link
+              to="/"
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Retour
+            </Link>
+          </div>
+        </header>
+        <main className="container py-10">
+          <div className="rounded-xl border border-border bg-card p-6">
+            <p className="font-medium">Erreur lors du chargement.</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {String((error as Error)?.message ?? error)}
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!proposalData) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="border-b border-border">
+          <div className="container flex h-16 items-center justify-between">
+            <Link
+              to="/"
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Retour
+            </Link>
+            {stored && (
+              <Button asChild variant="outline" size="sm" className="gap-2">
+                <Link to="/dashboard">
+                  <LayoutDashboard className="h-4 w-4" />
+                  Mes propositions
+                </Link>
+              </Button>
+            )}
+          </div>
+        </header>
+        <main className="container py-10">
+          <div className="rounded-xl border border-border bg-card p-6">
+            <p className="font-medium">Proposition introuvable.</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Si tu es le créateur, vérifie que la proposition a bien été
+              enregistrée dans Supabase (ou ouvre-la depuis ton dashboard).
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link
+              to="/"
+              className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span className="hidden sm:inline">Retour</span>
+            </Link>
+            <Badge variant={statusVariant(status)}>{statusLabel(status)}</Badge>
+            {expired && <Badge variant="destructive">Expirée</Badge>}
+          </div>
+
+          {stored && (
+            <div className="flex items-center gap-2">
+              <Button asChild variant="outline" size="sm" className="gap-2">
+                <Link to="/dashboard">
+                  <LayoutDashboard className="h-4 w-4" />
+                  <span className="hidden sm:inline">Dashboard</span>
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm" className="gap-2">
+                <Link to={`/proposal/${token}/edit`}>
+                  <Pencil className="h-4 w-4" />
+                  <span className="hidden sm:inline">Éditer</span>
+                </Link>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadPDF}
+                className="gap-2"
+              >
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">PDF</span>
+              </Button>
+            </div>
+          )}
         </div>
       </header>
 
-      {/* Document */}
-      <main className="container py-8 md:py-12">
-        <ProposalDocument data={demoData} token={token} />
+      <main className="container py-8">
+        <div className="grid gap-8 lg:grid-cols-3">
+          <div className="lg:col-span-2">
+            <div ref={documentRef}>
+              <ProposalDocument
+                data={proposalData}
+                token={token}
+                validUntil={validUntil ? new Date(validUntil) : undefined}
+              />
+            </div>
+          </div>
 
-        {/* Contact Card */}
-        <div className="mx-auto mt-8 max-w-3xl rounded-xl border border-border bg-card p-6 text-center shadow-card no-print">
-          <h3 className="text-lg font-semibold text-foreground">
-            Des questions ?
-          </h3>
-          <p className="mt-2 text-muted-foreground">
-            N'hésitez pas à me contacter pour en discuter.
-          </p>
-          <div className="mt-4 flex flex-col justify-center gap-3 sm:flex-row">
-            <Button asChild className="gap-2">
-              <a href={`mailto:${demoData.ownerEmail}`}>
-                <Mail className="h-4 w-4" />
-                {demoData.ownerEmail}
-              </a>
-            </Button>
-            {demoData.ownerPhone && (
-              <Button variant="outline" asChild className="gap-2">
-                <a href={`tel:${demoData.ownerPhone.replace(/\s/g, "")}`}>
-                  <Phone className="h-4 w-4" />
-                  {demoData.ownerPhone}
-                </a>
-              </Button>
-            )}
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
+              <h2 className="text-lg font-semibold">Réponse du client</h2>
+
+              <div className="mt-5 flex flex-col gap-3">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      className="gap-2"
+                      disabled={
+                        status === "accepted" ||
+                        status === "declined" ||
+                        expired
+                      }
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                      Accepter
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Confirmer l'acceptation</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-3">
+                      <div>
+                        <label className="text-sm text-muted-foreground">
+                          Nom (optionnel)
+                        </label>
+                        <Input
+                          value={acceptName}
+                          onChange={(e) => setAcceptName(e.target.value)}
+                          placeholder="Nom"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm text-muted-foreground">
+                          Email (optionnel)
+                        </label>
+                        <Input
+                          value={acceptEmail}
+                          onChange={(e) => setAcceptEmail(e.target.value)}
+                          placeholder="Email"
+                        />
+                      </div>
+                      {proposalData?.paymentLink && (
+                        <div className="rounded-lg border border-border bg-secondary/30 p-3 text-sm">
+                          Lien de paiement (acompte) :{" "}
+                          <a
+                            className="underline"
+                            href={proposalData.paymentLink}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {proposalData.paymentLink}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                    <DialogFooter>
+                      <Button onClick={accept} className="gap-2">
+                        <CheckCircle2 className="h-4 w-4" />
+                        Valider
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      className="gap-2"
+                      disabled={
+                        status === "accepted" ||
+                        status === "declined" ||
+                        expired
+                      }
+                    >
+                      <XCircle className="h-4 w-4" />
+                      Refuser
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Refuser la proposition</DialogTitle>
+                    </DialogHeader>
+                    <div>
+                      <label className="text-sm text-muted-foreground">
+                        Raison (optionnel)
+                      </label>
+                      <Textarea
+                        value={declineReason}
+                        onChange={(e) => setDeclineReason(e.target.value)}
+                        placeholder="Ex: budget, timing, autre..."
+                        className="mt-2"
+                      />
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        variant="destructive"
+                        onClick={decline}
+                        className="gap-2"
+                      >
+                        <XCircle className="h-4 w-4" />
+                        Confirmer le refus
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+
+                {!isSupabaseConfigured() && (
+                  <div className="rounded-lg border border-border bg-secondary/30 p-3 text-sm text-muted-foreground">
+                    Supabase n'est pas configuré sur ce déploiement : les
+                    boutons accept/refuser ne peuvent pas enregistrer la
+                    réponse.
+                  </div>
+                )}
+
+                {expired && (
+                  <div className="rounded-lg border border-border bg-secondary/30 p-3 text-sm text-muted-foreground">
+                    Cette proposition est expirée.
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </main>
 
-      {/* Print styles */}
       <style>{`
         @media print {
-          .no-print {
+          header, .no-print {
             display: none !important;
           }
           main {
             padding: 0 !important;
-          }
-          body {
-            background: white !important;
           }
         }
       `}</style>

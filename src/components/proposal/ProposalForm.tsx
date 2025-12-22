@@ -220,6 +220,19 @@ export const ProposalForm = ({ data, onChange }: ProposalFormProps) => {
               onChange={(e) => onChange({ ownerSiret: e.target.value })}
             />
           </div>
+
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="paymentLink">Lien de paiement acompte (optionnel)</Label>
+            <Input
+              id="paymentLink"
+              placeholder="https://buy.stripe.com/..."
+              value={data.paymentLink || ""}
+              onChange={(e) => onChange({ paymentLink: e.target.value })}
+            />
+            <p className="text-xs text-muted-foreground">
+              Si tu utilises Stripe Payment Links, colle ici le lien pour permettre au prospect de payer l'acompte.
+            </p>
+          </div>
         </div>
       </section>
 

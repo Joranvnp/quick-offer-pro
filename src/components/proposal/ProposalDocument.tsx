@@ -3,19 +3,33 @@ import { ProposalData } from "@/types/proposal";
 import { getPackById } from "@/data/packs";
 import { getOptionById } from "@/data/options";
 import { getProblemById, getGoalById } from "@/data/problems";
-import { calculatePricing, formatPrice, calculateDeliveryDate, formatDate } from "@/lib/pricing";
+import {
+  calculatePricing,
+  formatPrice,
+  calculateDeliveryDate,
+  formatDate,
+} from "@/lib/pricing";
 import { Timeline } from "./Timeline";
 
 interface ProposalDocumentProps {
   data: ProposalData;
   token?: string;
+  validUntil?: Date;
 }
 
-export const ProposalDocument = ({ data, token }: ProposalDocumentProps) => {
+export const ProposalDocument = ({
+  data,
+  token,
+  validUntil,
+}: ProposalDocumentProps) => {
   const pack = getPackById(data.packId);
   const problem = getProblemById(data.prospectProblem);
   const goal = getGoalById(data.prospectGoal);
-  const pricing = calculatePricing(data.packId, data.selectedOptions, data.depositPercent);
+  const pricing = calculatePricing(
+    data.packId,
+    data.selectedOptions,
+    data.depositPercent
+  );
   const deliveryDate = calculateDeliveryDate(data.packId);
 
   const toneTexts = {
@@ -47,7 +61,14 @@ export const ProposalDocument = ({ data, token }: ProposalDocumentProps) => {
           </h1>
           <p className="mt-1 text-muted-foreground">
             {formatDate(new Date())}
-            {token && <span className="ml-2">• Réf: {token.toUpperCase()}</span>}
+            {token && (
+              <span className="ml-2">• Réf: {token.toUpperCase()}</span>
+            )}
+            {validUntil && (
+              <span className="ml-2">
+                • Valable jusqu'au {formatDate(validUntil)}
+              </span>
+            )}
           </p>
         </div>
         {data.ownerName && (
@@ -83,9 +104,7 @@ export const ProposalDocument = ({ data, token }: ProposalDocumentProps) => {
       )}
 
       {/* Intro */}
-      <p className="text-center text-lg text-muted-foreground">
-        {texts.intro}
-      </p>
+      <p className="text-center text-lg text-muted-foreground">{texts.intro}</p>
 
       {/* What you get */}
       <section>
@@ -217,7 +236,8 @@ export const ProposalDocument = ({ data, token }: ProposalDocumentProps) => {
           ➡️ Prochaine étape
         </h2>
         <p className="mb-4 text-muted-foreground">
-          Répondez "OK" par message ou réservez un appel de 15 minutes.
+          Validez votre accord directement via le bouton "Accepter", ou
+          contactez-moi pour en discuter.
         </p>
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
           <a
@@ -249,7 +269,8 @@ export const ProposalDocument = ({ data, token }: ProposalDocumentProps) => {
         </p>
         {data.ownerSiret && <p className="mt-1">SIRET: {data.ownerSiret}</p>}
         <p className="mt-3 text-xs">
-          Ce document est une proposition commerciale simplifiée, non contractuelle.
+          Ce document est une proposition commerciale simplifiée, non
+          contractuelle.
         </p>
       </footer>
     </div>

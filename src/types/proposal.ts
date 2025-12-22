@@ -23,14 +23,18 @@ export interface ProposalData {
 
   // Settings
   tone: "neutral" | "confident" | "simple";
+
+  // Optional payment link (ex: Stripe Payment Link)
+  paymentLink?: string;
 }
 
 export interface Proposal extends ProposalData {
   id: string;
   token: string;
+  editToken: string;
   createdAt: Date;
   updatedAt: Date;
-  status: "draft" | "sent" | "viewed" | "accepted";
+  status: "draft" | "sent" | "viewed" | "accepted" | "declined";
   pdfUrl?: string;
 }
 
@@ -50,8 +54,25 @@ export const defaultProposalData: ProposalData = {
   ownerWebsite: "",
   ownerSiret: "",
   tone: "neutral",
+  paymentLink: "",
 };
 
-export const generateToken = (): string => {
-  return Math.random().toString(36).substring(2, 8);
+const base64Url = (bytes: Uint8Array) =>
+  btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+
+export const generateToken = (lengthBytes: number = 12): string => {
+  // 12 bytes => ~16 chars base64url; unguessable enough for public links.
+  const bytes = new Uint8Array(lengthBytes);
+  crypto.getRandomValues(bytes);
+  return base64Url(bytes);
+};
+
+export const generateEditToken = (lengthBytes: number = 18): string => {
+  // Longer secret for edits.
+  const bytes = new Uint8Array(lengthBytes);
+  crypto.getRandomValues(bytes);
+  return base64Url(bytes);
 };

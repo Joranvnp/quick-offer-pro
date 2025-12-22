@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { FileText, Zap, Share2, ArrowRight } from "lucide-react";
+import { FileText, Zap, Share2, ArrowRight, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Index = () => {
@@ -32,6 +32,12 @@ const Index = () => {
                 <Link to="/proposal/new">
                   Créer une proposition
                   <ArrowRight className="h-5 w-5" />
+                </Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="gap-2 text-lg">
+                <Link to="/dashboard">
+                  <LayoutDashboard className="h-5 w-5" />
+                  Mes propositions
                 </Link>
               </Button>
             </div>

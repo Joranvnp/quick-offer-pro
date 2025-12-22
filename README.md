@@ -72,82 +72,16 @@ To connect a domain, navigate to Project > Settings > Domains and click Connect 
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
 
-## D) Schéma DB + Sécurité
+## Supabase (tracking client : vue / acceptée / refusée)
 
-### Tables
+Pour activer le suivi (quand le prospect ouvre, accepte ou refuse), on utilise une table `public.proposals` verrouillée par RLS et **uniquement des RPC SECURITY DEFINER**.
 
-```sql
--- Table: packs
-CREATE TABLE packs (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,           -- "Starter", "Pro", "Pro+"
-  base_price INTEGER NOT NULL,  -- en centimes
-  features JSONB NOT NULL,      -- ["One-page", "Formulaire contact", ...]
-  default_timeline_days INTEGER NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
+1) Dans Supabase → SQL Editor : exécute `supabase/qop.sql`.
+2) Crée un fichier `.env.local` à partir de `.env.example` :
 
--- Table: options
-CREATE TABLE options (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  price INTEGER NOT NULL,       -- en centimes
-  compatible_packs TEXT[],      -- ["Starter", "Pro", "Pro+"]
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-
--- Table: proposals
-CREATE TABLE proposals (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  token TEXT UNIQUE NOT NULL,   -- court, ex: "abc123"
-
-  -- Prospect
-  prospect_name TEXT NOT NULL,
-  prospect_company TEXT,
-  prospect_sector TEXT,
-  prospect_city TEXT,
-  prospect_problem TEXT,        -- enum
-  prospect_goal TEXT,           -- enum
-
-  -- Offre
-  pack_id UUID REFERENCES packs(id),
-  selected_options UUID[],      -- références aux options
-
-  -- Pricing
-  total_price INTEGER NOT NULL,
-  deposit_percent INTEGER DEFAULT 30,
-
-  -- Livraison
-  delivery_estimate DATE,
-
-  -- Freelance
-  owner_name TEXT NOT NULL,
-  owner_phone TEXT,
-  owner_email TEXT NOT NULL,
-  owner_website TEXT,
-  owner_siret TEXT,
-
-  -- Meta
-  tone TEXT DEFAULT 'neutral',  -- "neutral", "confident", "simple"
-  status TEXT DEFAULT 'draft',  -- "draft", "sent", "viewed", "accepted"
-  pdf_url TEXT,
-
-  created_at TIMESTAMPTZ DEFAULT now(),
-  updated_at TIMESTAMPTZ DEFAULT now(),
-  owner_id UUID REFERENCES auth.users(id)
-);
+```bash
+VITE_SUPABASE_URL="https://YOUR_PROJECT_REF.supabase.co"
+VITE_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
 ```
 
-### RLS Policies
-
-```sql
--- Lecture publique via token (pour les prospects)
-CREATE POLICY "Public read via token"
-ON proposals FOR SELECT
-USING (true);  -- Le token dans l'URL suffit
-
--- CRUD pour owner
-CREATE POLICY "Owner full access"
-ON proposals FOR ALL
-USING (auth.uid() = owner_id);
-```
+Ensuite, tu peux utiliser `/dashboard` pour voir les statuts à jour.

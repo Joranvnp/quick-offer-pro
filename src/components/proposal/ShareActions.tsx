@@ -14,20 +14,26 @@ import { getPackById } from "@/data/packs";
 import { calculatePricing, calculateDeliveryDate } from "@/lib/pricing";
 import { generateMessages, MessageTemplate } from "@/lib/messageTemplates";
 import { useToast } from "@/hooks/use-toast";
+import { updateStoredProposal } from "@/lib/qopStorage";
+import { isSupabaseConfigured, remoteMarkSent, remoteUpsertProposal } from "@/lib/qopRemote";
+import { toYmd } from "@/lib/date";
 
 interface ShareActionsProps {
   data: ProposalData;
   token: string;
+  editToken: string;
+  validUntil: string; // YYYY-MM-DD
   onDownloadPDF: () => void;
 }
 
-export const ShareActions = ({ data, token, onDownloadPDF }: ShareActionsProps) => {
+export const ShareActions = ({ data, token, editToken, validUntil, onDownloadPDF }: ShareActionsProps) => {
   const { toast } = useToast();
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const pack = getPackById(data.packId);
   const pricing = calculatePricing(data.packId, data.selectedOptions, data.depositPercent);
   const deliveryDate = calculateDeliveryDate(data.packId);
+  const validUntilDate = new Date(validUntil);
 
   const proposalUrl = `${window.location.origin}/p/${token}`;
 
@@ -36,16 +42,43 @@ export const ShareActions = ({ data, token, onDownloadPDF }: ShareActionsProps) 
     prospectCompany: data.prospectCompany || "Votre entreprise",
     packName: pack?.name || "Pro",
     totalPrice: pricing.totalPrice,
+    depositAmount: pricing.depositAmount,
     deliveryDate,
+    validUntil: validUntilDate,
     proposalUrl,
     ownerName: data.ownerName || "Votre conseiller",
     ownerPhone: data.ownerPhone || "",
     ownerEmail: data.ownerEmail || "",
+    paymentLink: data.paymentLink || undefined,
   });
+
+  const syncRemoteAndMarkSent = async () => {
+    // Always mark locally.
+    updateStoredProposal(token, { status: "sent" });
+
+    if (!isSupabaseConfigured()) return;
+
+    // Make sure the latest content is saved remotely before sharing.
+    await remoteUpsertProposal({
+      token,
+      editToken,
+      proposal: data,
+      packId: data.packId,
+      selectedOptions: data.selectedOptions,
+      totalPrice: pricing.totalPrice,
+      depositPercent: data.depositPercent,
+      depositAmount: pricing.depositAmount,
+      validUntil: toYmd(new Date(validUntil)),
+    });
+    await remoteMarkSent(token);
+  };
 
   const copyToClipboard = async (text: string, id: string) => {
     await navigator.clipboard.writeText(text);
     setCopiedId(id);
+    syncRemoteAndMarkSent().catch(() => {
+      // ignore; user can still share
+    });
     toast({
       title: "Copié !",
       description: "Le message a été copié dans le presse-papier.",
@@ -55,6 +88,9 @@ export const ShareActions = ({ data, token, onDownloadPDF }: ShareActionsProps) 
 
   const copyLink = async () => {
     await navigator.clipboard.writeText(proposalUrl);
+    syncRemoteAndMarkSent().catch(() => {
+      // ignore; user can still share
+    });
     toast({
       title: "Lien copié !",
       description: "Le lien de la proposition a été copié.",
