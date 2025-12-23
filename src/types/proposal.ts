@@ -6,6 +6,8 @@ export interface ProposalData {
   prospectCity: string;
   prospectProblem: string;
   prospectGoal: string;
+  clientSource: string[];
+  mainAction: string;
 
   // Offer
   packId: string;
@@ -47,6 +49,8 @@ export const defaultProposalData: ProposalData = {
   prospectCity: "",
   prospectProblem: "",
   prospectGoal: "",
+  clientSource: [],
+  mainAction: "",
   packId: "pro",
   selectedOptions: [],
   depositPercent: 30,

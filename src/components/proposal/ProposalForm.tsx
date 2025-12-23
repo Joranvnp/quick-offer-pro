@@ -8,10 +8,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { problems, goals } from "@/data/problems";
+import { problems, goals, clientSources, siteActions } from "@/data/problems";
 import { ProposalData } from "@/types/proposal";
 import { PackSelector } from "./PackSelector";
 import { OptionsChecklist } from "./OptionsChecklist";
+import { Check } from "lucide-react";
 
 interface ProposalFormProps {
   data: ProposalData;
@@ -80,7 +81,7 @@ export const ProposalForm = ({ data, onChange }: ProposalFormProps) => {
         </h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label>Problème principal</Label>
+            <Label>Quel est le problème principal à résoudre ?</Label>
             <Select
               value={data.prospectProblem}
               onValueChange={(value) => onChange({ prospectProblem: value })}
@@ -98,7 +99,7 @@ export const ProposalForm = ({ data, onChange }: ProposalFormProps) => {
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Objectif visé</Label>
+            <Label>Quel est l'objectif prioritaire du nouveau site ?</Label>
             <Select
               value={data.prospectGoal}
               onValueChange={(value) => onChange({ prospectGoal: value })}
@@ -114,6 +115,62 @@ export const ProposalForm = ({ data, onChange }: ProposalFormProps) => {
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Quelle est l'action principale attendue du visiteur ?</Label>
+            <Select
+              value={data.mainAction}
+              onValueChange={(value) => onChange({ mainAction: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionnez..." />
+              </SelectTrigger>
+              <SelectContent>
+                {siteActions.map((action) => (
+                  <SelectItem key={action.id} value={action.id}>
+                    {action.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="mt-6 space-y-3">
+          <Label>Comment vos clients vous trouvent-ils aujourd'hui ?</Label>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {clientSources.map((source) => {
+              const isChecked = data.clientSource.includes(source.id);
+              return (
+                <div
+                  key={source.id}
+                  className={`flex items-center space-x-2 rounded-lg border p-3 transition-colors cursor-pointer ${
+                    isChecked
+                      ? "border-primary bg-primary/5"
+                      : "border-input hover:bg-accent"
+                  }`}
+                  onClick={() => {
+                    const newSources = isChecked
+                      ? data.clientSource.filter((id) => id !== source.id)
+                      : [...data.clientSource, source.id];
+                    onChange({ clientSource: newSources });
+                  }}
+                >
+                  <div
+                    className={`h-4 w-4 rounded border flex items-center justify-center ${
+                      isChecked
+                        ? "bg-primary border-primary text-primary-foreground"
+                        : "border-muted-foreground"
+                    }`}
+                  >
+                    {isChecked && <Check className="h-3 w-3" />}
+                  </div>
+                  <span className="text-sm font-medium leading-none">
+                    {source.label}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -222,7 +279,9 @@ export const ProposalForm = ({ data, onChange }: ProposalFormProps) => {
           </div>
 
           <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="paymentLink">Lien de paiement acompte (optionnel)</Label>
+            <Label htmlFor="paymentLink">
+              Lien de paiement acompte (optionnel)
+            </Label>
             <Input
               id="paymentLink"
               placeholder="https://buy.stripe.com/..."
@@ -230,7 +289,8 @@ export const ProposalForm = ({ data, onChange }: ProposalFormProps) => {
               onChange={(e) => onChange({ paymentLink: e.target.value })}
             />
             <p className="text-xs text-muted-foreground">
-              Si tu utilises Stripe Payment Links, colle ici le lien pour permettre au prospect de payer l'acompte.
+              Si tu utilises Stripe Payment Links, colle ici le lien pour
+              permettre au prospect de payer l'acompte.
             </p>
           </div>
         </div>
@@ -243,13 +303,23 @@ export const ProposalForm = ({ data, onChange }: ProposalFormProps) => {
         </h2>
         <div className="grid gap-3 sm:grid-cols-3">
           {[
-            { value: "neutral", label: "Neutre", desc: "Professionnel et équilibré" },
-            { value: "confident", label: "Confiant", desc: "Affirmé et rassurant" },
+            {
+              value: "neutral",
+              label: "Neutre",
+              desc: "Professionnel et équilibré",
+            },
+            {
+              value: "confident",
+              label: "Confiant",
+              desc: "Affirmé et rassurant",
+            },
             { value: "simple", label: "Simple", desc: "Accessible et direct" },
           ].map((tone) => (
             <button
               key={tone.value}
-              onClick={() => onChange({ tone: tone.value as ProposalData["tone"] })}
+              onClick={() =>
+                onChange({ tone: tone.value as ProposalData["tone"] })
+              }
               className={`rounded-lg border p-4 text-left transition-all ${
                 data.tone === tone.value
                   ? "border-primary bg-primary/5"

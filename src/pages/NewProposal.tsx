@@ -18,6 +18,7 @@ import { calculatePricing } from "@/lib/pricing";
 import { getPackById } from "@/data/packs";
 import { saveStoredProposal, updateStoredProposal } from "@/lib/qopStorage";
 import { isSupabaseConfigured, remoteUpsertProposal } from "@/lib/qopRemote";
+import { Banner } from "@/components/layout/Banner";
 
 const NewProposal = () => {
   const { toast } = useToast();
@@ -75,6 +76,9 @@ const NewProposal = () => {
         depositPercent: data.depositPercent,
         depositAmount: pricing.depositAmount,
         validUntil,
+        clientSource: data.clientSource,
+        mainAction: data.mainAction,
+        prospectGoal: data.prospectGoal,
       }).catch(() => {
         // Keep UX quiet; sharing will surface issues if any.
       });
@@ -102,9 +106,9 @@ const NewProposal = () => {
     data.ownerEmail;
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <Banner />
+      <header className="bg-white border-b sticky top-0 z-10">
         <div className="container flex h-16 items-center justify-between gap-2">
           <div className="flex items-center gap-2 sm:gap-4">
             <h1 className="text-lg font-semibold text-foreground">

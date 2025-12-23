@@ -35,25 +35,53 @@ export const problems: Problem[] = [
 
 export const goals: Goal[] = [
   {
+    id: "visibility",
+    label: "Être mieux trouvé sur Google (visibilité)",
+    shortLabel: "Visibilité Google",
+  },
+  {
     id: "more-calls",
-    label: "Recevoir plus d'appels de prospects",
+    label: "Avoir plus d'appels",
     shortLabel: "Plus d'appels",
   },
   {
     id: "more-quotes",
-    label: "Obtenir plus de demandes de devis",
+    label: "Avoir plus de demandes de devis",
     shortLabel: "Plus de devis",
   },
   {
-    id: "bookings",
-    label: "Permettre les réservations en ligne",
-    shortLabel: "Réservations en ligne",
+    id: "more-bookings",
+    label: "Avoir plus de réservations / RDV",
+    shortLabel: "Plus de RDV",
   },
   {
-    id: "credibility",
-    label: "Améliorer ma crédibilité professionnelle",
-    shortLabel: "Plus de crédibilité",
+    id: "showcase",
+    label: "Présenter clairement le menu / services",
+    shortLabel: "Présenter offre",
   },
+  {
+    id: "reassurance",
+    label: "Rassurer (avis, photos, infos)",
+    shortLabel: "Rassurer",
+  },
+];
+
+export const clientSources = [
+  { id: "google", label: "Google / Maps" },
+  { id: "instagram", label: "Instagram" },
+  { id: "facebook", label: "Facebook" },
+  { id: "word-of-mouth", label: "Bouche-à-oreille" },
+  { id: "platforms", label: "Plateformes (TheFork, Zenchef, Deliveroo…)" },
+  { id: "other", label: "Autre" },
+];
+
+export const siteActions = [
+  { id: "call", label: "Appeler" },
+  { id: "book", label: "Réserver" },
+  { id: "quote", label: "Demander un devis" },
+  { id: "appointment", label: "Prendre rendez-vous" },
+  { id: "menu", label: "Voir le menu / tarifs" },
+  { id: "directions", label: "Itinéraire" },
 ];
 
 export const getProblemById = (id: string): Problem | undefined => {

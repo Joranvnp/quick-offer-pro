@@ -24,6 +24,11 @@ create table if not exists public.proposals (
   total_price integer not null,
   deposit_percent integer not null,
   deposit_amount integer not null,
+  
+  -- new discovery fields
+  client_source text[] default '{}',
+  main_action text default '',
+  prospect_goal text default '',
 
   status text not null default 'draft',
   version integer not null default 1,
@@ -46,6 +51,9 @@ create table if not exists public.proposals (
 alter table public.proposals add column if not exists viewed_at timestamptz;
 alter table public.proposals add column if not exists declined_at timestamptz;
 alter table public.proposals add column if not exists declined_meta jsonb;
+alter table public.proposals add column if not exists client_source text[] default '{}';
+alter table public.proposals add column if not exists main_action text default '';
+alter table public.proposals add column if not exists prospect_goal text default '';
 
 create index if not exists proposals_token_idx on public.proposals (token);
 
@@ -81,6 +89,11 @@ revoke all on table public.proposals from anon, authenticated;
 -- IMPORTANT: we do NOT grant SELECT on this view to anon/authenticated.
 -- Access is only via qop_public_get().
 -- ---------------------------------------------------------
+-- DROP DEPENDENT FUNCTIONS FIRST
+drop function if exists public.qop_public_get(text);
+drop function if exists public.qop_mark_viewed(text);
+drop function if exists public.qop_decline(text, text, text);
+
 drop view if exists public.proposals_public;
 
 create view public.proposals_public as
@@ -92,6 +105,9 @@ select
   total_price,
   deposit_percent,
   deposit_amount,
+  client_source,
+  main_action,
+  prospect_goal,
   status,
   version,
   valid_until,
@@ -111,9 +127,7 @@ revoke all on table public.proposals_public from anon, authenticated;
 -- 5) DROP/RECREATE RPC that may change return types
 -- (This avoids: "cannot change return type of existing function")
 -- ---------------------------------------------------------
-drop function if exists public.qop_public_get(text);
-drop function if exists public.qop_mark_viewed(text);
-drop function if exists public.qop_decline(text, text, text);
+-- (Functions already dropped above to allow view update)
 
 -- (These usually keep same return type; dropping is optional.
 -- If you want full reset, uncomment below lines.)
@@ -135,7 +149,10 @@ create or replace function public.qop_upsert_proposal(
   p_total_price integer,
   p_deposit_percent integer,
   p_deposit_amount integer,
-  p_valid_until date
+  p_valid_until date,
+  p_client_source text[] default '{}',
+  p_main_action text default '',
+  p_prospect_goal text default ''
 )
 returns setof public.proposals
 language sql
@@ -146,12 +163,14 @@ as $$
     token, edit_token, proposal,
     pack_id, selected_options,
     total_price, deposit_percent, deposit_amount,
-    valid_until
+    valid_until,
+    client_source, main_action, prospect_goal
   ) values (
     p_token, p_edit_token, p_proposal,
     p_pack_id, coalesce(p_selected_options, '{}'),
     p_total_price, p_deposit_percent, p_deposit_amount,
-    p_valid_until
+    p_valid_until,
+    coalesce(p_client_source, '{}'), coalesce(p_main_action, ''), coalesce(p_prospect_goal, '')
   )
   on conflict (token)
   do update set
@@ -161,7 +180,10 @@ as $$
     total_price = excluded.total_price,
     deposit_percent = excluded.deposit_percent,
     deposit_amount = excluded.deposit_amount,
-    valid_until = excluded.valid_until
+    valid_until = excluded.valid_until,
+    client_source = excluded.client_source,
+    main_action = excluded.main_action,
+    prospect_goal = excluded.prospect_goal
   where public.proposals.edit_token = p_edit_token
   returning *;
 $$;

@@ -121,15 +121,35 @@ export const ProposalDocument = ({
             </span>
           </div>
           <p className="mb-4 text-muted-foreground">{pack.description}</p>
-          <ul className="grid gap-2 sm:grid-cols-2">
-            {pack.features.map((feature, i) => (
-              <li key={i} className="flex items-start gap-2">
-                <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-accent" />
-                <span className="text-sm text-foreground">{feature}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="mb-8">
+            <h3 className="mb-4 text-lg font-semibold text-primary">
+              Inclus dans votre pack
+            </h3>
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {pack.features.map((feature, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm">
+                  <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
 
+          {pack.bonuses && pack.bonuses.length > 0 && (
+            <div className="mb-8 rounded-xl bg-primary/5 p-6">
+              <h3 className="mb-4 text-lg font-semibold text-primary">
+                🎁 Offert (Bonus de lancement)
+              </h3>
+              <ul className="grid gap-3 sm:grid-cols-2">
+                {pack.bonuses.map((bonus, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm">
+                    <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
+                    <span>{bonus}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {data.selectedOptions.length > 0 && (
             <>
               <div className="my-4 border-t border-border" />
@@ -147,7 +167,7 @@ export const ProposalDocument = ({
                     >
                       <span className="flex items-center gap-2 text-foreground">
                         <Check className="h-4 w-4 text-accent" />
-                        {option.name}
+                        {option.label}
                       </span>
                       <span className="text-muted-foreground">
                         +{formatPrice(option.price)}

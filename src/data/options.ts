@@ -1,285 +1,189 @@
 export interface Option {
   id: string;
-  name: string;
+  label: string;
   price: number;
-  description: string;
-  compatiblePacks: string[];
+  description?: string;
+  category: "content" | "visibility" | "functional" | "maintenance" | "other";
+  compatiblePacks?: string[]; // If undefined, compatible with all
   isMonthly?: boolean;
 }
 
 export const options: Option[] = [
-  // Starter "Présence Express"
+  // Contenu / Visuels
   {
-    id: "redaction-express",
-    name: "Rédaction Express",
+    id: "copywriting-starter",
+    label: "Rédaction des textes (Starter)",
     price: 150,
-    description:
-      "Jusqu'à 3 sections (hero + services + contact). 1 aller-retour.",
+    category: "content",
     compatiblePacks: ["starter"],
   },
   {
-    id: "photos-starter",
-    name: "Photos optimisées (10)",
+    id: "copywriting-essential",
+    label: "Rédaction des textes (Essentiel)",
+    price: 350,
+    category: "content",
+    compatiblePacks: ["essential"],
+  },
+  {
+    id: "photos-10",
+    label: "Retouches & optimisation photos (10)",
     price: 120,
-    description: "Compression + recadrage léger. Photos fournies.",
-    compatiblePacks: ["starter"],
+    description: "Retouche luminosité/couleurs + compression web",
+    category: "content",
+    compatiblePacks: ["starter", "essential", "business"],
   },
   {
-    id: "g-business-mini",
-    name: "Google Business mini-optimisation",
-    price: 90,
+    id: "photos-20",
+    label: "Retouches & optimisation photos (20)",
+    price: 190,
+    description: "Retouche luminosité/couleurs + compression web",
+    category: "content",
+    compatiblePacks: ["starter", "essential", "business"],
+  },
+  {
+    id: "logo-simple",
+    label: "Logo simple",
+    price: 250, // Range 250-350, putting base price
     description:
-      "Catégorie, description courte, lien site, horaires, 5 services.",
-    compatiblePacks: ["starter"],
+      "Création d'un logo simple et efficace (sur devis pour identité complète)",
+    category: "content",
+    compatiblePacks: ["starter", "essential", "business"],
+  },
+
+  // Visibilité / SEO
+  {
+    id: "seo-reinforced",
+    label: "SEO local : 2 pages ciblées (service/ville)",
+    price: 390,
+    category: "visibility",
+    compatiblePacks: ["essential", "business"],
   },
   {
-    id: "booking-link",
-    name: "Réservation / prise de RDV (lien)",
-    price: 90,
-    description: "TheFork/Zenchef/Calendly/Planity/WhatsApp (lien + bouton).",
-    compatiblePacks: ["starter"],
+    id: "gmb-optimization",
+    label: "Google Business optimisation complète",
+    price: 150,
+    category: "visibility",
+    compatiblePacks: ["starter", "essential", "business"],
+  },
+  {
+    id: "google-ads-setup",
+    label: "Google Ads (setup 1 campagne)",
+    price: 390,
+    description: "Budget publicitaire non inclus (à payer à Google)",
+    category: "visibility",
+    compatiblePacks: ["essential", "business"],
   },
   {
     id: "qr-code",
-    name: "QR Code + mini affiche",
+    label: "QR Code + mini affiche",
     price: 60,
-    description: 'QR vers le site + 1 visuel A4 "Réservez / Appelez".',
-    compatiblePacks: ["starter"],
+    description: "QR vers le site + 1 visuel A4 'Réservez / Appelez'",
+    category: "visibility",
+    compatiblePacks: ["starter", "essential", "business"],
   },
 
-  // Essentiel "Vitrine Pro"
+  // Fonctionnel
+  {
+    id: "newsletter-setup",
+    label: "Newsletter setup",
+    price: 150,
+    description: "Brevo/Mailchimp + formulaire + template",
+    category: "functional",
+    compatiblePacks: ["essential"],
+  },
+  {
+    id: "blog-setup",
+    label: "Blog (page blog + modèle article)",
+    price: 290,
+    category: "functional",
+    compatiblePacks: ["essential", "business", "custom"],
+  },
+  {
+    id: "multilingual",
+    label: "Multilingue (1 langue)",
+    price: 250,
+    category: "functional",
+    compatiblePacks: ["essential", "business", "custom"],
+  },
+  {
+    id: "domain-setup",
+    label: "Achat + configuration du domaine",
+    price: 50,
+    description:
+      "Le coût annuel du domaine reste payé par le client. Le domaine reste au nom du client (propriétaire).",
+    category: "functional",
+    compatiblePacks: ["starter", "essential", "business"],
+  },
   {
     id: "page-supp",
-    name: "Page supplémentaire",
+    label: "Page standard supplémentaire",
     price: 120,
-    description: "Page standard (texte + 1 image).",
-    compatiblePacks: [
-      "pro",
-      "conversion",
-      "pro-plus",
-      "redesign",
-      "subscription",
-    ],
+    description: "Page de présentation, réalisation, équipe...",
+    category: "content",
+    compatiblePacks: ["essential", "business", "custom"],
   },
   {
-    id: "faq",
-    name: "FAQ (6–8 questions)",
-    price: 120,
-    description: "Réduit les objections + améliore confiance.",
-    compatiblePacks: [
-      "pro",
-      "conversion",
-      "pro-plus",
-      "redesign",
-      "subscription",
-    ],
-  },
-  {
-    id: "form-advanced",
-    name: "Formulaire devis avancé",
-    price: 150,
-    description: "Champs adaptés (date, type de demande), email auto.",
-    compatiblePacks: [
-      "pro",
-      "conversion",
-      "pro-plus",
-      "redesign",
-      "subscription",
-    ],
-  },
-  {
-    id: "gallery",
-    name: "Galerie photos (jusqu'à 20)",
-    price: 190,
-    description: "Optimisation + mise en page.",
-    compatiblePacks: [
-      "pro",
-      "conversion",
-      "pro-plus",
-      "redesign",
-      "subscription",
-    ],
-  },
-  {
-    id: "seo-local-plus",
-    name: "SEO local renforcé (2 pages)",
-    price: 390,
-    description: 'Ex: "Restaurant à Ville" + "Privatisation".',
-    compatiblePacks: [
-      "pro",
-      "conversion",
-      "pro-plus",
-      "redesign",
-      "subscription",
-    ],
-  },
-  {
-    id: "analytics",
-    name: "Analytics + objectifs",
-    price: 120,
-    description: "Clic téléphone, formulaire, réservation.",
-    compatiblePacks: [
-      "pro",
-      "conversion",
-      "pro-plus",
-      "redesign",
-      "subscription",
-    ],
-  },
-
-  // Conversion "Appels & Réservations"
-  {
-    id: "ab-test",
-    name: "A/B test simple CTA (30 jours)",
-    price: 190,
-    description: "2 variantes CTA + recommandation après 30 jours.",
-    compatiblePacks: ["conversion", "pro-plus", "subscription"],
-  },
-  {
-    id: "promo-page",
-    name: 'Page "Offres / Menu du moment"',
-    price: 120,
-    description: "Page facile à mettre à jour.",
-    compatiblePacks: ["conversion", "pro-plus", "subscription"],
-  },
-  {
-    id: "reviews",
-    name: "Avis clients (mise en avant)",
-    price: 90,
-    description: 'Intégration + mise en forme + section "preuves".',
-    compatiblePacks: ["conversion", "pro-plus", "subscription"],
-  },
-  {
-    id: "whatsapp",
-    name: "WhatsApp Business + bouton",
+    id: "section-supp",
+    label: "Section supplémentaire (sur la one-page)",
     price: 80,
-    description: "Lien + message pré-rempli (devis/réservation).",
-    compatiblePacks: ["conversion", "pro-plus", "subscription"],
+    description: "Ajout d'une section (ex: FAQ, Galerie, Tarifs)",
+    category: "content",
+    compatiblePacks: ["starter"],
   },
   {
-    id: "schema",
-    name: "Schema Local + FAQ schema",
-    price: 120,
-    description: "Rich results (selon cas).",
-    compatiblePacks: ["conversion", "pro-plus", "subscription"],
-  },
-
-  // Premium "Image de Marque"
-  {
-    id: "mini-identity",
-    name: "Mini identité visuelle",
-    price: 290,
-    description: "Palette + typo + 3 règles d'usage + 1 bannière.",
-    compatiblePacks: ["pro-plus", "subscription"],
-  },
-  {
-    id: "photo-retouch",
-    name: "Retouches photos (10)",
-    price: 250,
-    description: "Retouche plus poussée (lumière, crop, cohérence).",
-    compatiblePacks: ["pro-plus", "subscription"],
-  },
-  {
-    id: "translation",
-    name: "Traduction EN (pages principales)",
-    price: 250,
-    description: "Accueil + Services + Contact.",
-    compatiblePacks: ["pro-plus", "subscription"],
-  },
-  {
-    id: "privatization",
-    name: 'Page "Privatisation / Événements"',
-    price: 190,
-    description: "Très rentable pour les restos.",
-    compatiblePacks: ["pro-plus", "subscription"],
-  },
-  {
-    id: "social-kit",
-    name: "Kit réseaux sociaux (3 visuels)",
+    id: "page-service-supp",
+    label: "Page SEO supplémentaire (Service/Ville)",
     price: 150,
-    description: "Posts format IG/FB + style cohérent.",
-    compatiblePacks: ["pro-plus", "subscription"],
-  },
-
-  // Refonte Express
-  {
-    id: "migration-extended",
-    name: "Migration contenu étendue",
-    price: 250,
-    description: "Au-delà des pages clés (jusqu'à +5 pages).",
-    compatiblePacks: ["redesign"],
+    description: "Structure optimisée pour le référencement local",
+    category: "content",
+    compatiblePacks: ["business", "custom"],
   },
   {
-    id: "seo-redirect",
-    name: "Redirection SEO (jusqu'à 15 URLs)",
+    id: "integration-supp",
+    label: "Intégration supplémentaire",
     price: 150,
-    description: "Évite de perdre le référencement.",
-    compatiblePacks: ["redesign"],
-  },
-  {
-    id: "perf-cleanup",
-    name: "Nettoyage perf (images/scripts)",
-    price: 190,
-    description: "Focus Core Web Vitals (dans la limite du template).",
-    compatiblePacks: ["redesign"],
+    description:
+      "Installation & configuration d'un outil tiers (au-delà des 3 incluses)",
+    category: "functional",
+    compatiblePacks: ["business"],
   },
 
-  // Abonnement "Site + Suivi" (Récurrent)
+  // Suivi / Maintenance (Mensuel)
   {
-    id: "actu-monthly",
-    name: "1 actu / mois",
+    id: "maintenance-tech",
+    label: 'Suivi "Technique"',
+    price: 29,
+    description:
+      "Hébergement + SSL + sauvegardes + Mises à jour & sécurité (surveillance + correctifs). Bilan annuel (mail rapide). Engagement 3 mois.",
+    category: "maintenance",
+    isMonthly: true,
+  },
+  {
+    id: "maintenance-std",
+    label: 'Suivi "Standard"',
+    price: 59,
+    description:
+      "Tout le technique + 30 min de modifications de contenu + Rapport semestriel. Engagement 3 mois.",
+    category: "maintenance",
+    isMonthly: true,
+  },
+  {
+    id: "maintenance-plus",
+    label: 'Suivi "Plus"',
+    price: 99,
+    description:
+      "Tout le technique + 1h de modifications de contenu + Rapport mensuel. Engagement 3 mois.",
+    category: "maintenance",
+    isMonthly: true,
+  },
+  {
+    id: "maintenance-news",
+    label: "1 mise à jour de contenu / mois",
     price: 79,
-    description: "Actu courte + 1 image. 1 aller-retour.",
-    compatiblePacks: ["subscription"],
+    description:
+      "Modification de texte/photo/horaires/infos. Hors nouvelles pages.",
+    category: "maintenance",
     isMonthly: true,
-  },
-  {
-    id: "article-monthly",
-    name: "1 article SEO / mois",
-    price: 129,
-    description: "300–600 mots. Orienté SEO local. 1 aller-retour.",
-    compatiblePacks: ["subscription"],
-    isMonthly: true,
-  },
-  {
-    id: "g-business-monthly",
-    name: "Gestion Google Business",
-    price: 99,
-    description: "1 post + vérif infos + 1 recommandation.",
-    compatiblePacks: ["subscription"],
-    isMonthly: true,
-  },
-  {
-    id: "ads-monthly",
-    name: "Gestion Ads (mensuel)",
-    price: 250,
-    description: "Optimisations + reporting. Budget pub non inclus.",
-    compatiblePacks: ["subscription"],
-    isMonthly: true,
-  },
-
-  // Global / Autres
-  {
-    id: "maintenance-monthly",
-    name: "Maintenance mensuelle",
-    price: 99,
-    description: "30 min/mois + MAJ sécurité.",
-    compatiblePacks: ["starter", "pro", "conversion", "pro-plus", "redesign"],
-    isMonthly: true,
-  },
-  {
-    id: "evolution-pack",
-    name: "Pack évolutions (3h)",
-    price: 290,
-    description: "Idéal pour ajouter une page / changer un bloc.",
-    compatiblePacks: [
-      "starter",
-      "pro",
-      "conversion",
-      "pro-plus",
-      "redesign",
-      "subscription",
-    ],
   },
 ];
 
@@ -288,5 +192,8 @@ export const getOptionById = (id: string): Option | undefined => {
 };
 
 export const getOptionsForPack = (packId: string): Option[] => {
-  return options.filter((option) => option.compatiblePacks.includes(packId));
+  return options.filter((option) => {
+    if (!option.compatiblePacks) return true;
+    return option.compatiblePacks.includes(packId);
+  });
 };

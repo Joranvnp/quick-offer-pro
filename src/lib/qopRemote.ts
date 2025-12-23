@@ -20,7 +20,8 @@ export type QopPublicProposalRow = {
 };
 
 const SB_URL = (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? "";
-const SB_ANON = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ?? "";
+const SB_ANON =
+  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ?? "";
 
 /** Returns true if VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set. */
 export const isSupabaseConfigured = () => Boolean(SB_URL && SB_ANON);
@@ -55,7 +56,9 @@ export async function supabaseRpc<T>(
       "Content-Type": "application/json",
       apikey: SB_ANON,
       Authorization: `Bearer ${SB_ANON}`,
-      ...(opts?.preferRepresentation ? { Prefer: "return=representation" } : {}),
+      ...(opts?.preferRepresentation
+        ? { Prefer: "return=representation" }
+        : {}),
     },
     body: JSON.stringify(args),
   });
@@ -84,6 +87,9 @@ export async function remoteUpsertProposal(params: {
   depositPercent: number;
   depositAmount: number;
   validUntil: string; // YYYY-MM-DD
+  clientSource: string[];
+  mainAction: string;
+  prospectGoal: string;
 }): Promise<QopPublicProposalRow | null> {
   const rows = await supabaseRpc<QopPublicProposalRow[]>(
     "qop_upsert_proposal",
@@ -97,20 +103,32 @@ export async function remoteUpsertProposal(params: {
       p_deposit_percent: params.depositPercent,
       p_deposit_amount: params.depositAmount,
       p_valid_until: params.validUntil,
+      p_client_source: params.clientSource,
+      p_main_action: params.mainAction,
+      p_prospect_goal: params.prospectGoal,
     },
     { preferRepresentation: true }
   );
   return rows?.[0] ?? null;
 }
 
-export async function remotePublicGet(token: string): Promise<QopPublicProposalRow | null> {
+export async function remotePublicGet(
+  token: string
+): Promise<QopPublicProposalRow | null> {
   // Prefer the safer function (does NOT return edit_token).
   try {
-    const rows = await supabaseRpc<QopPublicProposalRow[]>("qop_public_get", { p_token: token });
+    const rows = await supabaseRpc<QopPublicProposalRow[]>("qop_public_get", {
+      p_token: token,
+    });
     return rows?.[0] ?? null;
   } catch {
     // Back-compat if you haven't applied the updated SQL yet:
-    const rows = await supabaseRpc<any[]>("qop_get_proposal", { p_token: token });
+    const rows = await supabaseRpc<Record<string, unknown>[]>(
+      "qop_get_proposal",
+      {
+        p_token: token,
+      }
+    );
     const row = rows?.[0];
     if (!row) return null;
     // Never keep edit_token from the public response.
@@ -141,7 +159,10 @@ export async function remoteAccept(params: {
   });
 }
 
-export async function remoteDecline(params: { token: string; reason?: string }): Promise<void> {
+export async function remoteDecline(params: {
+  token: string;
+  reason?: string;
+}): Promise<void> {
   await supabaseRpc<unknown>("qop_decline", {
     p_token: params.token,
     p_reason: params.reason ?? null,

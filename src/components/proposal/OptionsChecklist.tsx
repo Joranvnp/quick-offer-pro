@@ -13,15 +13,25 @@ export const OptionsChecklist = ({
   selectedOptions,
   onToggle,
 }: OptionsChecklistProps) => {
-  let availableOptions = getOptionsForPack(packId);
-
-  if (packId === "subscription") {
-    availableOptions = availableOptions.filter(
-      (opt) => opt.id !== "maintenance-monthly" && opt.id !== "seo-monthly"
-    );
-  }
+  const availableOptions = getOptionsForPack(packId);
 
   if (availableOptions.length === 0) {
+    return null;
+  }
+
+  // Filter options based on selection logic
+  const filteredOptions = availableOptions.filter((option) => {
+    // Special Logic: Hide "1 mise à jour de contenu" if Standard or Plus maintenance is selected
+    if (option.id === "maintenance-news") {
+      const hasHigherTierMaintenance =
+        selectedOptions.includes("maintenance-std") ||
+        selectedOptions.includes("maintenance-plus");
+      if (hasHigherTierMaintenance) return false;
+    }
+    return true;
+  });
+
+  if (filteredOptions.length === 0) {
     return null;
   }
 
@@ -31,7 +41,7 @@ export const OptionsChecklist = ({
         Options disponibles
       </h3>
       <div className="grid gap-3 sm:grid-cols-2">
-        {availableOptions.map((option) => (
+        {filteredOptions.map((option) => (
           <OptionItem
             key={option.id}
             option={option}
@@ -66,7 +76,7 @@ const OptionItem = ({ option, isSelected, onToggle }: OptionItemProps) => {
       />
       <div className="flex-1">
         <div className="flex items-center justify-between">
-          <span className="font-medium text-foreground">{option.name}</span>
+          <span className="font-medium text-foreground">{option.label}</span>
           <span className="text-sm font-semibold text-primary">
             +{formatPrice(option.price)}
             {option.isMonthly && <span className="text-xs">/mois</span>}

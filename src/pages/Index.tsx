@@ -12,10 +12,12 @@ import { packs, Pack } from "@/data/packs";
 import { formatPrice } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { Banner } from "@/components/layout/Banner";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
+      <Banner />
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
@@ -159,86 +161,95 @@ const HomePackCard = ({ pack, delay }: { pack: Pack; delay: number }) => {
   return (
     <div
       className={cn(
-        "relative flex flex-col rounded-xl border-2 p-6 text-left transition-all duration-200 animate-slide-up",
-        "border-border bg-card hover:shadow-elevated hover:border-primary/30"
+        "relative flex h-full flex-col rounded-2xl border bg-card p-6 transition-all duration-300 animate-slide-up",
+        "border-border/60 hover:border-primary/50 hover:shadow-xl hover:-translate-y-1",
+        pack.popular &&
+          "border-primary/50 shadow-lg ring-1 ring-primary/20 bg-gradient-to-b from-card to-primary/5"
       )}
       style={{ animationDelay: `${delay}ms` }}
     >
       {pack.popular && (
-        <span className="absolute -top-3 left-4 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-primary to-primary/90 px-4 py-1 text-xs font-bold uppercase tracking-wide text-primary-foreground shadow-md ring-2 ring-background">
           Populaire
         </span>
       )}
 
-      <div className="mb-4">
-        <h3 className="text-lg font-semibold text-foreground">{pack.name}</h3>
-        <p className="mt-1 text-sm text-muted-foreground">{pack.description}</p>
+      <div className="mb-4 text-center">
+        <h3 className="text-xl font-bold text-foreground">{pack.name}</h3>
+        <p className="mt-1 text-sm text-muted-foreground min-h-[60px] flex items-center justify-center">
+          {pack.description}
+        </p>
       </div>
 
-      <div className="mb-4">
+      <div className="mb-5 text-center">
         {pack.customPriceDisplay ? (
-          <span className="text-xl font-bold text-foreground">
+          <span className="text-3xl font-bold text-foreground">
             {pack.customPriceDisplay}
           </span>
         ) : (
-          <span className="text-3xl font-bold text-foreground">
-            {formatPrice(pack.basePrice)}
-          </span>
+          <div className="flex items-start justify-center gap-1">
+            <span className="text-4xl font-extrabold text-foreground tracking-tight">
+              {formatPrice(pack.basePrice).replace("€", "")}
+            </span>
+            <span className="text-xl font-bold text-muted-foreground mt-1">
+              €
+            </span>
+          </div>
         )}
-      </div>
-
-      <div className="mb-4 text-sm text-muted-foreground">
-        {pack.customTimelineDisplay ||
-          `Livraison en ${pack.defaultTimelineDays} jours`}
+        <div className="mt-1 text-sm font-medium text-muted-foreground">
+          {pack.customTimelineDisplay ||
+            `Livraison en ${pack.defaultTimelineDays} jours`}
+        </div>
       </div>
 
       {pack.note && (
-        <div className="mb-4 rounded bg-accent/10 p-2 text-xs font-medium text-accent-foreground">
+        <div className="mb-4 rounded-lg bg-accent/10 p-2 text-center text-xs font-medium text-accent-foreground">
           {pack.note}
         </div>
       )}
 
-      <ul className="space-y-2 flex-1">
-        {pack.features.slice(0, 5).map((feature, i) => (
-          <li key={i} className="flex items-start gap-2 text-sm">
-            <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-accent" />
-            <span className="text-foreground">{feature}</span>
-          </li>
-        ))}
-        {pack.features.length > 5 && (
-          <>
-            <div
-              className={cn(
-                "grid transition-all duration-200 ease-in-out",
-                isExpanded
-                  ? "grid-rows-[1fr] opacity-100"
-                  : "grid-rows-[0fr] opacity-0"
-              )}
-            >
-              <div className="overflow-hidden">
-                {pack.features.slice(5).map((feature, i) => (
-                  <li
-                    key={i + 5}
-                    className="flex items-start gap-2 text-sm mb-2"
-                  >
-                    <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-accent" />
-                    <span className="text-foreground">{feature}</span>
-                  </li>
-                ))}
+      <div className="flex-1">
+        <ul className="space-y-2">
+          {pack.features.map((feature, i) => (
+            <li key={i} className="flex items-start gap-2.5 text-sm group">
+              <div className="mt-1 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                <Check className="h-2.5 w-2.5 text-primary" />
               </div>
-            </div>
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="text-xs font-medium text-primary hover:underline"
-            >
-              {isExpanded ? "Voir moins" : "Voir tout"}
-            </button>
-          </>
-        )}
-      </ul>
+              <span className="text-foreground/90 leading-tight">
+                {feature}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {pack.bonuses && pack.bonuses.length > 0 && (
+        <div className="mt-6 rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-transparent p-3 dark:from-amber-950/30 dark:border-amber-800">
+          <p className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-amber-700 dark:text-amber-400">
+            <span className="text-base">🎁</span> Offert (lancement)
+          </p>
+          <ul className="space-y-1.5">
+            {pack.bonuses.map((bonus, i) => (
+              <li
+                key={i}
+                className="flex items-start gap-2 text-xs font-medium text-foreground/80"
+              >
+                <span className="mt-1.5 h-1 w-1 rounded-full bg-amber-400 flex-shrink-0" />
+                <span className="leading-tight">{bonus}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {pack.hostingNote && (
+        <div className="mt-4 border-t border-border pt-3 text-center text-[10px] text-muted-foreground">
+          {pack.hostingNote}
+        </div>
+      )}
 
       {pack.limits && (
-        <div className="mt-4 border-t border-border pt-3 text-xs text-muted-foreground">
+        <div className="mt-1 text-center text-[10px] text-muted-foreground/70">
           {pack.limits}
         </div>
       )}
