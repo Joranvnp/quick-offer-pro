@@ -28,7 +28,9 @@ export interface ProposalData {
   paymentLink?: string;
 }
 
-export interface Proposal extends ProposalData {
+export type ProposalStatus = "draft" | "sent" | "accepted";
+
+export interface ProposalRecord {
   id: string;
   token: string;
   editToken: string;
