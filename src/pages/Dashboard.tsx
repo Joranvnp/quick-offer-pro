@@ -1,9 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ExternalLink, Pencil, RefreshCw, Search, Trash2, CopyPlus, Home } from "lucide-react";
+import {
+  ExternalLink,
+  Pencil,
+  RefreshCw,
+  Search,
+  Trash2,
+  CopyPlus,
+  Home,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Badge, BadgeProps } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -23,8 +31,17 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { listStoredProposals, deleteStoredProposal, saveStoredProposal, updateStoredProposal } from "@/lib/qopStorage";
-import { generateEditToken, generateToken } from "@/types/proposal";
+import {
+  listStoredProposals,
+  deleteStoredProposal,
+  saveStoredProposal,
+  updateStoredProposal,
+} from "@/lib/qopStorage";
+import {
+  generateEditToken,
+  generateToken,
+  ProposalStatus,
+} from "@/types/proposal";
 import { isSupabaseConfigured, remotePublicGet } from "@/lib/qopRemote";
 import { useToast } from "@/hooks/use-toast";
 
@@ -45,7 +62,7 @@ const statusLabel = (s: string) => {
   }
 };
 
-const statusVariant = (s: string) => {
+const statusVariant = (s: string): BadgeProps["variant"] => {
   switch (s) {
     case "accepted":
       return "default";
@@ -93,22 +110,24 @@ const Dashboard = () => {
     if (!isSupabaseConfigured()) {
       toast({
         title: "Supabase non configuré",
-        description: "Ajoute VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY dans ton .env.local.",
+        description:
+          "Ajoute VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY dans ton .env.local.",
         variant: "destructive",
       });
       return;
     }
 
     const tokens = items.map((i) => i.token);
-    let updated = 0;
+    const updated = 0;
 
     await Promise.all(
       tokens.map(async (token) => {
         try {
           const row = await remotePublicGet(token);
           if (!row) return;
-          updateStoredProposal(token, { status: (row.status as any) || "sent" });
-          updated++;
+          updateStoredProposal(token, {
+            status: (row.status as ProposalStatus) || "sent",
+          });
         } catch {
           // ignore (proposal may not exist remotely yet)
         }
@@ -139,35 +158,52 @@ const Dashboard = () => {
     });
 
     setItems(listStoredProposals());
-    toast({ title: "Dupliquée", description: "Une nouvelle proposition a été créée." });
+    toast({
+      title: "Dupliquée",
+      description: "Une nouvelle proposition a été créée.",
+    });
   };
 
   const remove = (token: string) => {
     deleteStoredProposal(token);
     setItems(listStoredProposals());
-    toast({ title: "Supprimée", description: "La proposition a été retirée de ce navigateur." });
+    toast({
+      title: "Supprimée",
+      description: "La proposition a été retirée de ce navigateur.",
+    });
   };
 
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="container flex h-16 items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Button asChild variant="outline" size="sm" className="gap-2">
               <Link to="/">
                 <Home className="h-4 w-4" />
-                Accueil
+                <span className="hidden sm:inline">Accueil</span>
               </Link>
             </Button>
-            <h1 className="text-lg font-semibold">Mes propositions</h1>
+            <h1 className="text-lg font-semibold">
+              <span className="hidden sm:inline">Mes propositions</span>
+              <span className="sm:hidden">Propositions</span>
+            </h1>
           </div>
           <div className="flex items-center gap-2">
-            <Button onClick={refreshStatuses} variant="outline" size="sm" className="gap-2">
+            <Button
+              onClick={refreshStatuses}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+            >
               <RefreshCw className="h-4 w-4" />
-              Actualiser
+              <span className="hidden sm:inline">Actualiser</span>
             </Button>
             <Button asChild size="sm">
-              <Link to="/proposal/new">Nouvelle</Link>
+              <Link to="/proposal/new">
+                <span className="hidden sm:inline">Nouvelle</span>
+                <span className="sm:hidden">Nouv.</span>
+              </Link>
             </Button>
           </div>
         </div>
@@ -189,7 +225,121 @@ const Dashboard = () => {
           </p>
         </div>
 
-        <div className="rounded-xl border border-border bg-card">
+        {/* Mobile View (Cards) */}
+        <div className="grid gap-4 md:hidden">
+          {filtered.map((p) => (
+            <div
+              key={p.token}
+              className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <h3 className="font-semibold leading-tight">
+                    {p.data?.prospectCompany || (
+                      <span className="text-muted-foreground">
+                        Sans entreprise
+                      </span>
+                    )}
+                  </h3>
+                  <div className="mt-1 text-xs text-muted-foreground">
+                    {p.token}
+                  </div>
+                </div>
+                <Badge variant={statusVariant(p.status)}>
+                  {statusLabel(p.status)}
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span className="text-muted-foreground">Prospect :</span>{" "}
+                  <span className="font-medium">
+                    {p.data?.prospectName || "—"}
+                  </span>
+                </div>
+                <div className="text-right text-muted-foreground">
+                  {fmt(p.updatedAt)}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2 pt-2">
+                <Button
+                  asChild
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 gap-2"
+                >
+                  <a href={`/p/${p.token}`} target="_blank" rel="noreferrer">
+                    <ExternalLink className="h-4 w-4" />
+                    Ouvrir
+                  </a>
+                </Button>
+                <Button
+                  asChild
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 gap-2"
+                >
+                  <Link to={`/proposal/${p.token}/edit`}>
+                    <Pencil className="h-4 w-4" />
+                    Éditer
+                  </Link>
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 gap-2"
+                  onClick={() => duplicate(p.token)}
+                >
+                  <CopyPlus className="h-4 w-4" />
+                  Dupliquer
+                </Button>
+
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="flex-1 gap-2"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Supprimer
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Supprimer cette proposition ?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Cela la retire uniquement de ce navigateur. (Le lien
+                        public peut encore exister si déjà enregistré dans
+                        Supabase.)
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => remove(p.token)}>
+                        Supprimer
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </div>
+          ))}
+
+          {filtered.length === 0 && (
+            <div className="py-10 text-center text-muted-foreground">
+              Aucune proposition. Crée ta première proposition.
+            </div>
+          )}
+        </div>
+
+        {/* Desktop View (Table) */}
+        <div className="hidden rounded-xl border border-border bg-card md:block">
           <Table>
             <TableHeader>
               <TableRow>
@@ -204,51 +354,91 @@ const Dashboard = () => {
               {filtered.map((p) => (
                 <TableRow key={p.token}>
                   <TableCell className="font-medium">
-                    {p.data?.prospectCompany || <span className="text-muted-foreground">—</span>}
-                    <div className="text-xs text-muted-foreground">/{p.token}</div>
+                    {p.data?.prospectCompany || (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                    <div className="text-xs text-muted-foreground">
+                      /{p.token}
+                    </div>
                   </TableCell>
-                  <TableCell>{p.data?.prospectName || <span className="text-muted-foreground">—</span>}</TableCell>
                   <TableCell>
-                    <Badge variant={statusVariant(p.status) as any}>{statusLabel(p.status)}</Badge>
+                    {p.data?.prospectName || (
+                      <span className="text-muted-foreground">—</span>
+                    )}
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{fmt(p.updatedAt)}</TableCell>
+                  <TableCell>
+                    <Badge variant={statusVariant(p.status)}>
+                      {statusLabel(p.status)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {fmt(p.updatedAt)}
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button asChild size="sm" variant="outline" className="gap-2">
-                        <a href={`/p/${p.token}`} target="_blank" rel="noreferrer">
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="outline"
+                        className="gap-2"
+                      >
+                        <a
+                          href={`/p/${p.token}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
                           <ExternalLink className="h-4 w-4" />
                           Ouvrir
                         </a>
                       </Button>
-                      <Button asChild size="sm" variant="outline" className="gap-2">
+                      <Button
+                        asChild
+                        size="sm"
+                        variant="outline"
+                        className="gap-2"
+                      >
                         <Link to={`/proposal/${p.token}/edit`}>
                           <Pencil className="h-4 w-4" />
                           Éditer
                         </Link>
                       </Button>
-                      <Button size="sm" variant="outline" className="gap-2" onClick={() => duplicate(p.token)}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-2"
+                        onClick={() => duplicate(p.token)}
+                      >
                         <CopyPlus className="h-4 w-4" />
                         Dupliquer
                       </Button>
 
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button size="sm" variant="destructive" className="gap-2">
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="gap-2"
+                          >
                             <Trash2 className="h-4 w-4" />
                             Supprimer
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Supprimer cette proposition ?</AlertDialogTitle>
+                            <AlertDialogTitle>
+                              Supprimer cette proposition ?
+                            </AlertDialogTitle>
                             <AlertDialogDescription>
-                              Cela la retire uniquement de ce navigateur. (Le lien public peut encore exister si déjà
-                              enregistré dans Supabase.)
+                              Cela la retire uniquement de ce navigateur. (Le
+                              lien public peut encore exister si déjà enregistré
+                              dans Supabase.)
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Annuler</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => remove(p.token)}>Supprimer</AlertDialogAction>
+                            <AlertDialogAction onClick={() => remove(p.token)}>
+                              Supprimer
+                            </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
@@ -259,7 +449,10 @@ const Dashboard = () => {
 
               {filtered.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="py-10 text-center text-muted-foreground">
+                  <TableCell
+                    colSpan={5}
+                    className="py-10 text-center text-muted-foreground"
+                  >
                     Aucune proposition. Crée ta première proposition.
                   </TableCell>
                 </TableRow>
@@ -270,8 +463,9 @@ const Dashboard = () => {
 
         {!isSupabaseConfigured() && (
           <div className="mt-6 rounded-xl border border-border bg-secondary/30 p-4 text-sm text-muted-foreground">
-            <strong>Note :</strong> Sans Supabase configuré, tu peux créer et partager en local, mais{" "}
-            <strong>tu ne verras pas</strong> les statuts “vue/acceptée/refusée”.
+            <strong>Note :</strong> Sans Supabase configuré, tu peux créer et
+            partager en local, mais <strong>tu ne verras pas</strong> les
+            statuts “vue/acceptée/refusée”.
           </div>
         )}
       </main>

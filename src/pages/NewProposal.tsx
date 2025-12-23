@@ -6,7 +6,12 @@ import { ProposalForm } from "@/components/proposal/ProposalForm";
 import { ProposalDocument } from "@/components/proposal/ProposalDocument";
 import { PricingSummary } from "@/components/proposal/PricingSummary";
 import { ShareActions } from "@/components/proposal/ShareActions";
-import { ProposalData, defaultProposalData, generateEditToken, generateToken } from "@/types/proposal";
+import {
+  ProposalData,
+  defaultProposalData,
+  generateEditToken,
+  generateToken,
+} from "@/types/proposal";
 import { useToast } from "@/hooks/use-toast";
 import { addDays, toYmd } from "@/lib/date";
 import { calculatePricing } from "@/lib/pricing";
@@ -46,7 +51,11 @@ const NewProposal = () => {
     updateStoredProposal(token, { data });
 
     const pack = getPackById(data.packId);
-    const pricing = calculatePricing(data.packId, data.selectedOptions, data.depositPercent);
+    const pricing = calculatePricing(
+      data.packId,
+      data.selectedOptions,
+      data.depositPercent
+    );
     const shouldSyncRemote =
       Boolean(pack) &&
       Boolean(data.prospectCompany) &&
@@ -80,7 +89,8 @@ const NewProposal = () => {
     }
     toast({
       title: "Impression lancée",
-      description: "Sélectionnez 'Enregistrer en PDF' dans les options d'impression.",
+      description:
+        "Sélectionnez 'Enregistrer en PDF' dans les options d'impression.",
     });
   };
 
@@ -95,43 +105,46 @@ const NewProposal = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="container flex h-16 items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-4">
             <Link
               to="/"
               className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" />
-              Retour
+              <span className="hidden sm:inline">Retour</span>
             </Link>
             <h1 className="text-lg font-semibold text-foreground">
-              Nouvelle proposition
+              <span className="hidden sm:inline">Nouvelle proposition</span>
+              <span className="sm:hidden">Nouv. prop.</span>
             </h1>
           </div>
-          <Button asChild variant="outline" size="sm" className="gap-2">
-            <Link to="/dashboard">
-              <LayoutDashboard className="h-4 w-4" />
-              Mes propositions
-            </Link>
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowPreview(!showPreview)}
-            className="gap-2"
-          >
-            {showPreview ? (
-              <>
-                <EyeOff className="h-4 w-4" />
-                Masquer aperçu
-              </>
-            ) : (
-              <>
-                <Eye className="h-4 w-4" />
-                Voir aperçu
-              </>
-            )}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button asChild variant="outline" size="sm" className="gap-2">
+              <Link to="/dashboard">
+                <LayoutDashboard className="h-4 w-4" />
+                <span className="hidden md:inline">Mes propositions</span>
+              </Link>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPreview(!showPreview)}
+              className="gap-2"
+            >
+              {showPreview ? (
+                <>
+                  <EyeOff className="h-4 w-4" />
+                  <span className="hidden sm:inline">Masquer</span>
+                </>
+              ) : (
+                <>
+                  <Eye className="h-4 w-4" />
+                  <span className="hidden sm:inline">Aperçu</span>
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -194,7 +207,11 @@ const NewProposal = () => {
                 </Button>
               </div>
               <div ref={documentRef}>
-                <ProposalDocument data={data} token={token} validUntil={new Date(validUntil)} />
+                <ProposalDocument
+                  data={data}
+                  token={token}
+                  validUntil={new Date(validUntil)}
+                />
               </div>
             </div>
           </div>
