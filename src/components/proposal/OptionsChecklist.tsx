@@ -13,7 +13,13 @@ export const OptionsChecklist = ({
   selectedOptions,
   onToggle,
 }: OptionsChecklistProps) => {
-  const availableOptions = getOptionsForPack(packId);
+  let availableOptions = getOptionsForPack(packId);
+
+  if (packId === "subscription") {
+    availableOptions = availableOptions.filter(
+      (opt) => opt.id !== "maintenance-monthly" && opt.id !== "seo-monthly"
+    );
+  }
 
   if (availableOptions.length === 0) {
     return null;
@@ -63,9 +69,12 @@ const OptionItem = ({ option, isSelected, onToggle }: OptionItemProps) => {
           <span className="font-medium text-foreground">{option.name}</span>
           <span className="text-sm font-semibold text-primary">
             +{formatPrice(option.price)}
+            {option.isMonthly && <span className="text-xs">/mois</span>}
           </span>
         </div>
-        <p className="mt-1 text-sm text-muted-foreground">{option.description}</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {option.description}
+        </p>
       </div>
     </label>
   );

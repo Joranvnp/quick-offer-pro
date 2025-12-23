@@ -8,7 +8,10 @@ interface PackSelectorProps {
   onSelect: (packId: string) => void;
 }
 
-export const PackSelector = ({ selectedPackId, onSelect }: PackSelectorProps) => {
+export const PackSelector = ({
+  selectedPackId,
+  onSelect,
+}: PackSelectorProps) => {
   return (
     <div className="grid gap-4 md:grid-cols-3">
       {packs.map((pack, index) => (
@@ -31,7 +34,10 @@ interface PackCardProps {
   delay: number;
 }
 
+import { useState } from "react";
+
 const PackCard = ({ pack, isSelected, onSelect, delay }: PackCardProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   return (
     <button
       onClick={onSelect}
@@ -53,7 +59,9 @@ const PackCard = ({ pack, isSelected, onSelect, delay }: PackCardProps) => {
       <div className="mb-4 flex items-start justify-between">
         <div>
           <h3 className="text-lg font-semibold text-foreground">{pack.name}</h3>
-          <p className="mt-1 text-sm text-muted-foreground">{pack.description}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {pack.description}
+          </p>
         </div>
         {isSelected && (
           <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary">
@@ -63,15 +71,27 @@ const PackCard = ({ pack, isSelected, onSelect, delay }: PackCardProps) => {
       </div>
 
       <div className="mb-4">
-        <span className="text-3xl font-bold text-foreground">
-          {formatPrice(pack.basePrice)}
-        </span>
-        <span className="text-sm text-muted-foreground"> HT</span>
+        {pack.customPriceDisplay ? (
+          <span className="text-xl font-bold text-foreground">
+            {pack.customPriceDisplay}
+          </span>
+        ) : (
+          <span className="text-3xl font-bold text-foreground">
+            {formatPrice(pack.basePrice)}
+          </span>
+        )}
       </div>
 
       <div className="mb-4 text-sm text-muted-foreground">
-        Livraison en {pack.defaultTimelineDays} jours
+        {pack.customTimelineDisplay ||
+          `Livraison en ${pack.defaultTimelineDays} jours`}
       </div>
+
+      {pack.note && (
+        <div className="mb-4 rounded bg-accent/10 p-2 text-xs font-medium text-accent-foreground">
+          {pack.note}
+        </div>
+      )}
 
       <ul className="space-y-2">
         {pack.features.slice(0, 5).map((feature, i) => (
@@ -81,11 +101,45 @@ const PackCard = ({ pack, isSelected, onSelect, delay }: PackCardProps) => {
           </li>
         ))}
         {pack.features.length > 5 && (
-          <li className="text-sm text-muted-foreground">
-            + {pack.features.length - 5} autres inclus
-          </li>
+          <>
+            <div
+              className={cn(
+                "grid transition-all duration-200 ease-in-out",
+                isExpanded
+                  ? "grid-rows-[1fr] opacity-100"
+                  : "grid-rows-[0fr] opacity-0"
+              )}
+            >
+              <div className="overflow-hidden">
+                {pack.features.slice(5).map((feature, i) => (
+                  <li
+                    key={i + 5}
+                    className="flex items-start gap-2 text-sm mb-2"
+                  >
+                    <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-accent" />
+                    <span className="text-foreground">{feature}</span>
+                  </li>
+                ))}
+              </div>
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsExpanded(!isExpanded);
+              }}
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              {isExpanded ? "Voir moins" : "Voir tout"}
+            </button>
+          </>
         )}
       </ul>
+
+      {pack.limits && (
+        <div className="mt-4 border-t border-border pt-3 text-xs text-muted-foreground">
+          {pack.limits}
+        </div>
+      )}
     </button>
   );
 };

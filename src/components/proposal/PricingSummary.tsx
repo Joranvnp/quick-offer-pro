@@ -40,6 +40,7 @@ export const PricingSummary = ({
               <span className="text-muted-foreground">+ {option.name}</span>
               <span className="text-foreground">
                 {formatPrice(option.price)}
+                {option.isMonthly && <span className="text-xs">/mois</span>}
               </span>
             </div>
           );
@@ -48,7 +49,7 @@ export const PricingSummary = ({
         <div className="my-4 border-t border-border" />
 
         <div className="flex items-center justify-between">
-          <span className="text-lg font-semibold text-foreground">Total HT</span>
+          <span className="text-lg font-semibold text-foreground">Total</span>
           <span className="text-2xl font-bold text-foreground">
             {formatPrice(pricing.totalPrice)}
           </span>

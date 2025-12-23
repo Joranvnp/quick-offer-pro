@@ -151,6 +151,7 @@ export const ProposalDocument = ({
                       </span>
                       <span className="text-muted-foreground">
                         +{formatPrice(option.price)}
+                        {option.isMonthly && " / mois"}
                       </span>
                     </li>
                   );
@@ -179,7 +180,7 @@ export const ProposalDocument = ({
         </h2>
         <div className="rounded-xl border-2 border-primary bg-primary/5 p-6">
           <div className="flex items-center justify-between text-lg">
-            <span className="font-semibold text-foreground">Total HT</span>
+            <span className="font-semibold text-foreground">Total</span>
             <span className="text-3xl font-bold text-foreground">
               {formatPrice(pricing.totalPrice)}
             </span>
@@ -268,6 +269,7 @@ export const ProposalDocument = ({
           {data.ownerEmail && <span>{data.ownerEmail}</span>}
         </p>
         {data.ownerSiret && <p className="mt-1">SIRET: {data.ownerSiret}</p>}
+        <p className="mt-1">TVA non applicable, art. 293 B du CGI</p>
         <p className="mt-3 text-xs">
           Ce document est une proposition commerciale simplifiée, non
           contractuelle.

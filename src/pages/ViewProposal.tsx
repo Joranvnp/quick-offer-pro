@@ -293,12 +293,6 @@ const ViewProposal = () => {
           {stored && (
             <div className="flex items-center gap-2">
               <Button asChild variant="outline" size="sm" className="gap-2">
-                <Link to="/dashboard">
-                  <LayoutDashboard className="h-4 w-4" />
-                  <span className="hidden sm:inline">Dashboard</span>
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="sm" className="gap-2">
                 <Link to={`/proposal/${token}/edit`}>
                   <Pencil className="h-4 w-4" />
                   <span className="hidden sm:inline">Éditer</span>
