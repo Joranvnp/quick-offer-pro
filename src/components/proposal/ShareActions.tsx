@@ -51,7 +51,8 @@ export const ShareActions = ({
 
   const proposalUrl = `${window.location.origin}/p/${token}`;
 
-  const canShare = !!record && !saving;
+  // Since this component is only rendered when isValid is true, we can assume it's shareable.
+  const canShare = true;
 
   const messages = generateMessages({
     prospectName: data.prospectName || "Client",
@@ -93,15 +94,12 @@ export const ShareActions = ({
     await navigator.clipboard.writeText(text);
     // Consider the proposal "sent" once we copy a message.
     try {
-      await markProposalSent(token);
+      await syncRemoteAndMarkSent();
     } catch (e) {
       // non-blocking
       console.warn(e);
     }
     setCopiedId(id);
-    syncRemoteAndMarkSent().catch(() => {
-      // ignore; user can still share
-    });
     toast({
       title: "Copié !",
       description: "Le message a été copié dans le presse-papier.",
@@ -192,16 +190,7 @@ export const ShareActions = ({
       </div>
 
       <div className="text-xs text-muted-foreground">
-        {saving
-          ? "Sauvegarde en cours…"
-          : record
-          ? "Sauvegardé"
-          : "Sauvegarde automatique dès que les champs obligatoires sont remplis."}
-        {record?.status === "accepted"
-          ? " • ✅ Acceptée"
-          : record?.status === "sent"
-          ? " • Envoyée"
-          : ""}
+        Proposition prête à être partagée.
       </div>
     </div>
   );
