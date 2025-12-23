@@ -1,6 +1,17 @@
 import { Link } from "react-router-dom";
-import { FileText, Zap, Share2, ArrowRight, LayoutDashboard } from "lucide-react";
+import {
+  FileText,
+  Zap,
+  Share2,
+  ArrowRight,
+  LayoutDashboard,
+  Check,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { packs, Pack } from "@/data/packs";
+import { formatPrice } from "@/lib/pricing";
+import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 const Index = () => {
   return (
@@ -34,7 +45,12 @@ const Index = () => {
                   <ArrowRight className="h-5 w-5" />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="gap-2 text-lg">
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="gap-2 text-lg"
+              >
                 <Link to="/dashboard">
                   <LayoutDashboard className="h-5 w-5" />
                   Mes propositions
@@ -94,61 +110,14 @@ const Index = () => {
       <section className="py-20">
         <div className="container">
           <h2 className="mb-4 text-center text-3xl font-bold text-foreground">
-            Trois offres, zéro complexité
+            Nos offres packagées
           </h2>
           <p className="mb-12 text-center text-lg text-muted-foreground">
-            Des prix clairs pour des prestations claires.
+            Des solutions claires, sans surprise et rentables.
           </p>
-          <div className="grid gap-6 md:grid-cols-3">
-            {[
-              {
-                name: "Starter",
-                price: "490€",
-                features: ["Site one-page", "Formulaire contact", "Livraison 5j"],
-              },
-              {
-                name: "Pro",
-                price: "890€",
-                features: ["5 pages", "SEO local", "Google Business", "Livraison 10j"],
-                popular: true,
-              },
-              {
-                name: "Pro+",
-                price: "1 290€",
-                features: ["Tout Pro", "Blog", "Analytics", "Maintenance 1 mois"],
-              },
-            ].map((pack, i) => (
-              <div
-                key={i}
-                className={`relative rounded-2xl border-2 p-8 ${
-                  pack.popular
-                    ? "border-primary bg-primary/5 shadow-elevated"
-                    : "border-border bg-card"
-                }`}
-              >
-                {pack.popular && (
-                  <span className="absolute -top-3 left-4 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
-                    Populaire
-                  </span>
-                )}
-                <h3 className="text-xl font-semibold text-foreground">
-                  {pack.name}
-                </h3>
-                <p className="mt-2 text-3xl font-bold text-foreground">
-                  {pack.price}
-                  <span className="text-base font-normal text-muted-foreground">
-                    {" "}
-                    HT
-                  </span>
-                </p>
-                <ul className="mt-6 space-y-3">
-                  {pack.features.map((f, j) => (
-                    <li key={j} className="text-muted-foreground">
-                      ✓ {f}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {packs.map((pack, i) => (
+              <HomePackCard key={pack.id} pack={pack} delay={i * 100} />
             ))}
           </div>
         </div>
@@ -175,9 +144,104 @@ const Index = () => {
       {/* Footer */}
       <footer className="border-t border-border py-8">
         <div className="container text-center text-sm text-muted-foreground">
-          <p>Mini-Proposition — Créez des propositions commerciales simplement.</p>
+          <p>
+            Mini-Proposition — Créez des propositions commerciales simplement.
+          </p>
         </div>
       </footer>
+    </div>
+  );
+};
+
+const HomePackCard = ({ pack, delay }: { pack: Pack; delay: number }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <div
+      className={cn(
+        "relative flex flex-col rounded-xl border-2 p-6 text-left transition-all duration-200 animate-slide-up",
+        "border-border bg-card hover:shadow-elevated hover:border-primary/30"
+      )}
+      style={{ animationDelay: `${delay}ms` }}
+    >
+      {pack.popular && (
+        <span className="absolute -top-3 left-4 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
+          Populaire
+        </span>
+      )}
+
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold text-foreground">{pack.name}</h3>
+        <p className="mt-1 text-sm text-muted-foreground">{pack.description}</p>
+      </div>
+
+      <div className="mb-4">
+        {pack.customPriceDisplay ? (
+          <span className="text-xl font-bold text-foreground">
+            {pack.customPriceDisplay}
+          </span>
+        ) : (
+          <span className="text-3xl font-bold text-foreground">
+            {formatPrice(pack.basePrice)}
+          </span>
+        )}
+      </div>
+
+      <div className="mb-4 text-sm text-muted-foreground">
+        {pack.customTimelineDisplay ||
+          `Livraison en ${pack.defaultTimelineDays} jours`}
+      </div>
+
+      {pack.note && (
+        <div className="mb-4 rounded bg-accent/10 p-2 text-xs font-medium text-accent-foreground">
+          {pack.note}
+        </div>
+      )}
+
+      <ul className="space-y-2 flex-1">
+        {pack.features.slice(0, 5).map((feature, i) => (
+          <li key={i} className="flex items-start gap-2 text-sm">
+            <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-accent" />
+            <span className="text-foreground">{feature}</span>
+          </li>
+        ))}
+        {pack.features.length > 5 && (
+          <>
+            <div
+              className={cn(
+                "grid transition-all duration-200 ease-in-out",
+                isExpanded
+                  ? "grid-rows-[1fr] opacity-100"
+                  : "grid-rows-[0fr] opacity-0"
+              )}
+            >
+              <div className="overflow-hidden">
+                {pack.features.slice(5).map((feature, i) => (
+                  <li
+                    key={i + 5}
+                    className="flex items-start gap-2 text-sm mb-2"
+                  >
+                    <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-accent" />
+                    <span className="text-foreground">{feature}</span>
+                  </li>
+                ))}
+              </div>
+            </div>
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              {isExpanded ? "Voir moins" : "Voir tout"}
+            </button>
+          </>
+        )}
+      </ul>
+
+      {pack.limits && (
+        <div className="mt-4 border-t border-border pt-3 text-xs text-muted-foreground">
+          {pack.limits}
+        </div>
+      )}
     </div>
   );
 };

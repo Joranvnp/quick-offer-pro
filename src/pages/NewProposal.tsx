@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Eye, EyeOff, LayoutDashboard } from "lucide-react";
+import { Eye, EyeOff, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProposalForm } from "@/components/proposal/ProposalForm";
 import { ProposalDocument } from "@/components/proposal/ProposalDocument";
@@ -107,13 +107,6 @@ const NewProposal = () => {
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between gap-2">
           <div className="flex items-center gap-2 sm:gap-4">
-            <Link
-              to="/"
-              className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">Retour</span>
-            </Link>
             <h1 className="text-lg font-semibold text-foreground">
               <span className="hidden sm:inline">Nouvelle proposition</span>
               <span className="sm:hidden">Nouv. prop.</span>

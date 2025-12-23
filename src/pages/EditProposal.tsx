@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Eye, EyeOff, LayoutDashboard } from "lucide-react";
+import { Eye, EyeOff, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProposalForm } from "@/components/proposal/ProposalForm";
 import { ProposalDocument } from "@/components/proposal/ProposalDocument";
@@ -18,7 +18,9 @@ const EditProposal = () => {
   const { token = "" } = useParams<{ token: string }>();
   const stored = token ? getStoredProposal(token) : null;
 
-  const [data, setData] = useState<ProposalData>(stored?.data ?? defaultProposalData);
+  const [data, setData] = useState<ProposalData>(
+    stored?.data ?? defaultProposalData
+  );
   const [showPreview, setShowPreview] = useState(false);
   const documentRef = useRef<HTMLDivElement>(null);
 
@@ -42,7 +44,11 @@ const EditProposal = () => {
     updateStoredProposal(token, { data });
 
     const pack = getPackById(data.packId);
-    const pricing = calculatePricing(data.packId, data.selectedOptions, data.depositPercent);
+    const pricing = calculatePricing(
+      data.packId,
+      data.selectedOptions,
+      data.depositPercent
+    );
     const shouldSyncRemote =
       Boolean(pack) &&
       Boolean(data.prospectCompany) &&
@@ -72,7 +78,8 @@ const EditProposal = () => {
     if (documentRef.current) window.print();
     toast({
       title: "Impression lancée",
-      description: "Sélectionnez 'Enregistrer en PDF' dans les options d'impression.",
+      description:
+        "Sélectionnez 'Enregistrer en PDF' dans les options d'impression.",
     });
   };
 
@@ -92,9 +99,12 @@ const EditProposal = () => {
 
         <main className="container py-10">
           <div className="mx-auto max-w-xl rounded-2xl border border-border bg-card p-6">
-            <h1 className="text-xl font-semibold">Proposition introuvable sur ce navigateur</h1>
+            <h1 className="text-xl font-semibold">
+              Proposition introuvable sur ce navigateur
+            </h1>
             <p className="mt-2 text-muted-foreground">
-              Pour éditer, ouvre la proposition depuis <strong>Mes propositions</strong> (dashboard) sur le même
+              Pour éditer, ouvre la proposition depuis{" "}
+              <strong>Mes propositions</strong> (dashboard) sur le même
               navigateur qui l'a créée.
             </p>
             <div className="mt-6 flex gap-2">
@@ -123,14 +133,9 @@ const EditProposal = () => {
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link
-              to="/dashboard"
-              className="flex items-center gap-2 text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Dashboard
-            </Link>
-            <h1 className="text-lg font-semibold text-foreground">Éditer la proposition</h1>
+            <h1 className="text-lg font-semibold text-foreground">
+              Éditer la proposition
+            </h1>
           </div>
 
           <div className="flex items-center gap-2">
@@ -139,7 +144,12 @@ const EditProposal = () => {
                 Ouvrir lien public
               </a>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowPreview(!showPreview)} className="gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowPreview(!showPreview)}
+              className="gap-2"
+            >
               {showPreview ? (
                 <>
                   <EyeOff className="h-4 w-4" />
@@ -163,7 +173,9 @@ const EditProposal = () => {
 
             {isValid && (
               <div className="mt-10 rounded-xl border border-border bg-card p-6 shadow-card animate-fade-in">
-                <h3 className="mb-4 text-lg font-semibold text-foreground">Partager la proposition</h3>
+                <h3 className="mb-4 text-lg font-semibold text-foreground">
+                  Partager la proposition
+                </h3>
                 <ShareActions
                   data={data}
                   token={token}
@@ -196,14 +208,24 @@ const EditProposal = () => {
           <div className="fixed inset-0 z-50 overflow-auto bg-background/95 p-4 backdrop-blur md:p-8">
             <div className="mx-auto max-w-4xl">
               <div className="mb-6 flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-foreground">Aperçu de la proposition</h2>
-                <Button variant="outline" onClick={() => setShowPreview(false)} className="gap-2">
+                <h2 className="text-xl font-semibold text-foreground">
+                  Aperçu de la proposition
+                </h2>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowPreview(false)}
+                  className="gap-2"
+                >
                   <EyeOff className="h-4 w-4" />
                   Fermer
                 </Button>
               </div>
               <div ref={documentRef}>
-                <ProposalDocument data={data} token={token} validUntil={new Date(validUntil)} />
+                <ProposalDocument
+                  data={data}
+                  token={token}
+                  validUntil={new Date(validUntil)}
+                />
               </div>
             </div>
           </div>
